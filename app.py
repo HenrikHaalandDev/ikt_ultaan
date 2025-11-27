@@ -14,8 +14,8 @@ from sqlalchemy import func
 app = Flask(__name__)
 
 # Bruk en statisk SECRET_KEY (sett en sikker verdi i miljøvariabel i produksjon)
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "devkey")
-app.config['WTF_CSRF_SECRET_KEY'] = os.getenv("WTF_CSRF_SECRET_KEY", "devcsrf")
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "FYS8gh49g4jgjS6h4hG4sjg4g4g4")
+app.config['WTF_CSRF_SECRET_KEY'] = os.getenv("WTF_CSRF_SECRET_KEY", "g8GJg48gjGjg48gj48jg93jg")
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///loan_system.db'
