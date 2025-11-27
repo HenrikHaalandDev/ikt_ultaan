@@ -1,0 +1,481 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-shell">
+    <div class="dashboard-shell-inner">
+
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <div class="page-kicker mb-1">
+                    <i class="fa-regular fa-circle-dot me-1"></i> {{ t('Utlån – oversikt') }}
+                </div>
+                <h2 class="mb-1 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-primary"></i>
+                    <span>{{ t('Utlån – oversikt') }}</span>
+                </h2>
+                <p class="text-muted mb-0">
+                    {{ t('Rask oversikt over aktive, forfalte og returnerte utlån.') }}
+                </p>
+            </div>
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <a href="{{ url_for('new_loan') }}" class="btn btn-primary btn-icon">
+                    <i class="fas fa-plus"></i> {{ t('Nytt utlån') }}
+                </a>
+                {% if is_admin %}
+                <a href="{{ url_for('admin_panel') }}" class="btn btn-outline-secondary btn-icon">
+                    <i class="fas fa-cog"></i> {{ t('Admin') }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Aktive utlån') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value">{{ total_active }}</div>
+                                <div class="stat-sub">{{ t('Utlån som ikke er returnert') }}</div>
+                            </div>
+                            <span class="badge-pill-soft">
+                                <i class="fa-solid fa-clock-rotate-left me-1"></i> Live
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Forfalte utlån') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value text-danger">{{ overdue_count }}</div>
+                                <div class="stat-sub">{{ t('Frist passert') }}</div>
+                            </div>
+                            <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Returnert i dag') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value text-success">{{ returned_today_count }}</div>
+                                <div class="stat-sub">{{ t('Registrert som returnert i dag') }}</div>
+                            </div>
+                            <i class="fa-solid fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Totalt returnert') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value">{{ total_returned }}</div>
+                                <div class="stat-sub">{{ t('Historikk') }}</div>
+                            </div>
+                            <i class="fa-solid fa-box-archive text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend row -->
+        <div class="d-flex justify-content-between align-items-center mb-3 dashboard-legend flex-wrap gap-2">
+            <div class="legend-pill">
+                <span class="legend-dot"></span>
+                <span>{{ t('Røde rader markerer forfalte aktive utlån') }}</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="loan-tabs-wrapper mb-3">
+            <ul class="nav nav-pills mb-0" id="loanTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button"
+                            role="tab">
+                        <i class="fa-solid fa-circle-dot me-1 text-success"></i>
+                        {{ t('Aktive utlån') }}
+                        <span class="badge bg-light text-dark ms-2">{{ active_loans|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="returned-tab" data-bs-toggle="tab" data-bs-target="#returned" type="button"
+                            role="tab">
+                        <i class="fa-solid fa-box-archive me-1"></i>
+                        {{ t('Returnerte') }}
+                        <span class="badge bg-light text-dark ms-2">{{ returned_loans|length }}</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Global filters -->
+        <div class="filters-card mb-3">
+            <div class="card-body row g-3 align-items-center">
+                <div class="col-md-5">
+                    <label for="loanSearch" class="form-label mb-1">{{ t('Søk') }}</label>
+                    <input type="text" id="loanSearch" class="form-control"
+                           placeholder="{{ t('Søk på navn, klasse eller utstyr...') }}">
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="filterMyLoans">
+                        <label class="form-check-label" for="filterMyLoans">
+                            {{ t('Vis bare mine utlån') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="filterOverdue">
+                        <label class="form-check-label" for="filterOverdue">
+                            {{ t('Vis kun forfalte (aktive)') }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab content -->
+        <div class="tab-content" id="loanTabsContent">
+            <!-- Aktive -->
+            <div class="tab-pane fade show active" id="active" role="tabpanel">
+                {% if active_loans %}
+                <div class="card mb-3">
+                    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <h5 class="mb-0 d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-circle-dot text-success"></i>
+                            <span>{{ t('Aktive utlån') }}</span>
+                        </h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small">{{ t('Sorter:') }}</span>
+                            <select id="activeSort" class="form-select form-select-sm" style="min-width: 210px;">
+                                <option value="checkout_desc">{{ t('Utlånt – nyeste først') }}</option>
+                                <option value="checkout_asc">{{ t('Utlånt – eldste først') }}</option>
+                                <option value="due_asc">{{ t('Frist – tidligst først') }}</option>
+                                <option value="due_desc">{{ t('Frist – senest først') }}</option>
+                                <option value="item_asc">{{ t('Utstyr – A → Å') }}</option>
+                                <option value="item_desc">{{ t('Utstyr – Å → A') }}</option>
+                                <option value="name_asc">{{ t('Navn – A → Å') }}</option>
+                                <option value="name_desc">{{ t('Navn – Å → A') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0" id="activeTable">
+                                <thead>
+                                    <tr>
+                                        <th>{{ t('Navn') }}</th>
+                                        <th>{{ t('Klasse') }}</th>
+                                        <th>{{ t('Telefon') }}</th>
+                                        <th>{{ t('Utstyr') }}</th>
+                                        <th>{{ t('Utlånt') }}</th>
+                                        <th>{{ t('Frist') }}</th>
+                                        <th>{{ t('Handlinger') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for loan in active_loans %}
+                                    <tr class="{% if loan.overdue %}table-danger{% endif %}"
+                                        data-name="{{ loan.borrower_name|lower }}"
+                                        data-class="{{ loan.class_info|lower if loan.class_info }}"
+                                        data-item="{{ loan.item|lower }}"
+                                        data-owner="{{ loan.user_id }}"
+                                        data-overdue="{{ '1' if loan.overdue else '0' }}"
+                                        data-checkout="{{ loan.checkout_date_local.isoformat() }}"
+                                        data-due="{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date }}">
+                                        <td>{{ loan.borrower_name }}</td>
+                                        <td>{{ loan.class_info }}</td>
+                                        <td>{{ loan.borrower_phone or '' }}</td>
+                                        <td>{{ loan.item }}</td>
+                                        <td>{{ loan.checkout_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                        <td>
+                                            {% if loan.due_date %}
+                                                {{ loan.due_date.strftime('%Y-%m-%d') }}
+                                                {% if loan.overdue %}
+                                                    <span class="badge bg-danger ms-1">{{ t('Forfalt') }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">{{ t('Ingen frist') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('loan_detail', loan_id=loan.id) }}"
+                                               class="btn btn-sm btn-outline-info btn-icon me-1">
+                                                <i class="fas fa-eye"></i> {{ t('Se') }}
+                                            </a>
+
+                                            {% if is_admin or loan.user_id == session.get('user_id') %}
+                                            <form method="post" action="{{ url_for('return_loan', loan_id=loan.id) }}"
+                                                  class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-success btn-icon me-1">
+                                                    <i class="fas fa-check"></i> {{ t('Returner') }}
+                                                </button>
+                                            </form>
+                                            {% endif %}
+
+                                            {% if is_admin %}
+                                            <form method="post" action="{{ url_for('delete_loan', loan_id=loan.id) }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet?') }}');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-icon">
+                                                    <i class="fas fa-trash"></i> {{ t('Slett') }}
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    {{ t('Ingen aktive utlån for øyeblikket.') }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Returnerte -->
+            <div class="tab-pane fade" id="returned" role="tabpanel">
+                {% if returned_loans %}
+                <div class="card mb-3">
+                    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <h5 class="mb-0 d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-box-archive"></i>
+                            <span>{{ t('Returnerte utlån') }}</span>
+                        </h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small">{{ t('Sorter:') }}</span>
+                            <select id="returnedSort" class="form-select form-select-sm" style="min-width: 210px;">
+                                <option value="return_desc">{{ t('Returnert – nyeste først') }}</option>
+                                <option value="return_asc">{{ t('Returnert – eldste først') }}</option>
+                                <option value="checkout_desc">{{ t('Utlånt – nyeste først') }}</option>
+                                <option value="checkout_asc">{{ t('Utlånt – eldste først') }}</option>
+                                <option value="item_asc">{{ t('Utstyr – A → Å') }}</option>
+                                <option value="item_desc">{{ t('Utstyr – Å → A') }}</option>
+                                <option value="name_asc">{{ t('Navn – A → Å') }}</option>
+                                <option value="name_desc">{{ t('Navn – Å → A') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0" id="returnedTable">
+                                <thead>
+                                    <tr>
+                                        <th>{{ t('Navn') }}</th>
+                                        <th>{{ t('Klasse') }}</th>
+                                        <th>{{ t('Telefon') }}</th>
+                                        <th>{{ t('Utstyr') }}</th>
+                                        <th>{{ t('Utlånt') }}</th>
+                                        <th>{{ t('Frist') }}</th>
+                                        <th>{{ t('Returnert') }}</th>
+                                        <th>{{ t('Handlinger') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for loan in returned_loans %}
+                                    <tr
+                                        data-name="{{ loan.borrower_name|lower }}"
+                                        data-class="{{ loan.class_info|lower if loan.class_info }}"
+                                        data-item="{{ loan.item|lower }}"
+                                        data-owner="{{ loan.user_id }}"
+                                        data-checkout="{{ loan.checkout_date_local.isoformat() }}"
+                                        data-return="{{ loan.return_date_local.isoformat() }}"
+                                        data-due="{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date }}">
+                                        <td>{{ loan.borrower_name }}</td>
+                                        <td>{{ loan.class_info }}</td>
+                                        <td>{{ loan.borrower_phone or '' }}</td>
+                                        <td>{{ loan.item }}</td>
+                                        <td>{{ loan.checkout_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                        <td>
+                                            {% if loan.due_date %}
+                                                {{ loan.due_date.strftime('%Y-%m-%d') }}
+                                            {% else %}
+                                                <span class="text-muted">{{ t('Ingen frist') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ loan.return_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('loan_detail', loan_id=loan.id) }}"
+                                               class="btn btn-sm btn-outline-info btn-icon me-1">
+                                                <i class="fas fa-eye"></i> {{ t('Se') }}
+                                            </a>
+                                            {% if is_admin %}
+                                            <form method="post" action="{{ url_for('delete_loan', loan_id=loan.id) }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet?') }}');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-icon">
+                                                    <i class="fas fa-trash"></i> {{ t('Slett') }}
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    {{ t('Ingen returnerte utlån ennå.') }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        function sortTable(tableId, selectId) {
+            const tableBody = document.querySelector('#' + tableId + ' tbody');
+            const select = document.getElementById(selectId);
+            if (!tableBody || !select) return;
+
+            const getRows = () => Array.from(tableBody.querySelectorAll('tr'));
+
+            function compareDate(aVal, bVal, asc = true) {
+                if (!aVal && !bVal) return 0;
+                if (!aVal) return 1;
+                if (!bVal) return -1;
+                const aTime = Date.parse(aVal);
+                const bTime = Date.parse(bVal);
+                return asc ? aTime - bTime : bTime - aTime;
+            }
+
+            function compareText(aVal, bVal, asc = true) {
+                aVal = (aVal || '').toString();
+                bVal = (bVal || '').toString();
+                const cmp = aVal.localeCompare(bVal, 'nb', { sensitivity: 'base' });
+                return asc ? cmp : -cmp;
+            }
+
+            function applySort() {
+                const mode = select.value;
+                const rows = getRows();
+
+                const sorted = rows.slice().sort((a, b) => {
+                    const dataA = a.dataset;
+                    const dataB = b.dataset;
+
+                    switch (mode) {
+                        case 'checkout_desc':
+                            return compareDate(dataA.checkout, dataB.checkout, false);
+                        case 'checkout_asc':
+                            return compareDate(dataA.checkout, dataB.checkout, true);
+                        case 'due_asc':
+                            return compareDate(dataA.due, dataB.due, true);
+                        case 'due_desc':
+                            return compareDate(dataA.due, dataB.due, false);
+                        case 'item_asc':
+                            return compareText(dataA.item, dataB.item, true);
+                        case 'item_desc':
+                            return compareText(dataA.item, dataB.item, false);
+                        case 'name_asc':
+                            return compareText(dataA.name, dataB.name, true);
+                        case 'name_desc':
+                            return compareText(dataA.name, dataB.name, false);
+                        case 'return_desc':
+                            return compareDate(dataA.return, dataB.return, false);
+                        case 'return_asc':
+                            return compareDate(dataA.return, dataB.return, true);
+                        default:
+                            return 0;
+                    }
+                });
+
+                sorted.forEach(tr => tableBody.appendChild(tr));
+            }
+
+            select.addEventListener('change', applySort);
+            applySort();
+        }
+
+        // Sorters
+        sortTable('activeTable', 'activeSort');
+        sortTable('returnedTable', 'returnedSort');
+
+        // Filters
+        const searchInput = document.getElementById('loanSearch');
+        const myLoansCheckbox = document.getElementById('filterMyLoans');
+        const overdueCheckbox = document.getElementById('filterOverdue');
+        const currentUserId = "{{ session.user_id }}";
+
+        function filterTables() {
+            const query = (searchInput?.value || '').toLowerCase().trim();
+            const onlyMine = myLoansCheckbox?.checked || false;
+            const onlyOverdue = overdueCheckbox?.checked || false;
+
+            function applyToTable(tableId, isActive) {
+                const tbody = document.querySelector('#' + tableId + ' tbody');
+                if (!tbody) return;
+
+                tbody.querySelectorAll('tr').forEach(row => {
+                    const data = row.dataset;
+                    const name = data.name || '';
+                    const klass = data.class || '';
+                    const item = data.item || '';
+                    const owner = data.owner || '';
+                    const overdue = data.overdue === '1';
+
+                    let visible = true;
+
+                    if (query) {
+                        const haystack = (name + ' ' + klass + ' ' + item).toLowerCase();
+                        visible = haystack.includes(query);
+                    }
+
+                    if (visible && onlyMine && currentUserId) {
+                        visible = owner === String(currentUserId);
+                    }
+
+                    if (visible && isActive && onlyOverdue) {
+                        visible = overdue;
+                    }
+
+                    row.style.display = visible ? '' : 'none';
+                });
+            }
+
+            applyToTable('activeTable', true);
+            applyToTable('returnedTable', false);
+        }
+
+        if (searchInput) searchInput.addEventListener('input', filterTables);
+        if (myLoansCheckbox) myLoansCheckbox.addEventListener('change', filterTables);
+        if (overdueCheckbox) overdueCheckbox.addEventListener('change', filterTables);
+
+        // Initial filter
+        filterTables();
+    })();
+</script>
+{% endblock %}

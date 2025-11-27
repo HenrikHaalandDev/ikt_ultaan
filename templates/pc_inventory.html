@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>{{ t('PC-oversikt') }}</h2>
+    {% if is_admin %}
+        <a href="{{ url_for('add_pc') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> {{ t('Legg til PC') }}
+        </a>
+    {% endif %}
+</div>
+
+<!-- Search + Sort controls -->
+<div class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input id="pcSearch" type="text" class="form-control"
+               placeholder="{{ t('Søk på OK-nummer/serienr eller modell...') }}">
+    </div>
+    <div class="col-md-4">
+        <select id="pcSort" class="form-select">
+            <option value="model_asc">{{ t('Sorter: Modell A → Z') }}</option>
+            <option value="model_desc">{{ t('Sorter: Modell Z → A') }}</option>
+            <option value="ok_desc">{{ t('Sorter: OK-nummer høy → lav') }}</option>
+            <option value="ok_asc">{{ t('Sorter: OK-nummer lav → høy') }}</option>
+            <option value="status_loaned_first">{{ t('Sorter: Utlånt først') }}</option>
+            <option value="status_free_first">{{ t('Sorter: Ledig først') }}</option>
+        </select>
+    </div>
+    <div class="col-md-2 text-md-end">
+        <button id="clearSearch" class="btn btn-outline-secondary w-100">
+            {{ t('Tøm søk') }}
+        </button>
+    </div>
+</div>
+
+{% if pcs %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="pcTable">
+        <thead class="table-dark">
+            <tr>
+                <th>{{ t('OK-nummer / Serienr') }}</th>
+                <th>{{ t('Modelltype') }}</th>
+                <th>{{ t('Status') }}</th>
+                <th>{{ t('Utlånt til') }}</th>
+                <th>{{ t('Frist') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for pc in pcs %}
+            {% set active = pc.active_loan() %}
+            <tr class="pc-row"
+                data-ok="{{ pc.ok_number|lower }}"
+                data-model="{{ pc.model_type|lower }}"
+                data-status="{% if active %}loaned{% else %}free{% endif %}"
+                data-oknum="{% set digits = pc.ok_number|replace('OK','')|replace('ok','')|replace(' ','') %}{{ digits }}">
+                <td>{{ pc.ok_number }}</td>
+                <td>{{ pc.model_type }}</td>
+                <td>
+                    {% if active %}
+                        <span class="badge bg-warning">{{ t('Utlånt') }}</span>
+                    {% else %}
+                        <span class="badge bg-success">{{ t('Ledig') }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if active %}
+                        {{ active.borrower_name }} ({{ active.class_info or "—" }})
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if active and active.due_date %}
+                        {{ active.due_date.strftime('%Y-%m-%d') }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="noResults" class="alert alert-info mt-3" style="display:none;">
+    {{ t('Ingen treff.') }}
+</div>
+
+{% else %}
+<div class="alert alert-info">{{ t('Ingen PC-er registrert ennå.') }}</div>
+{% endif %}
+
+<script>
+(function () {
+    const searchInput = document.getElementById("pcSearch");
+    const sortSelect  = document.getElementById("pcSort");
+    const clearBtn    = document.getElementById("clearSearch");
+    const tableBody   = document.querySelector("#pcTable tbody");
+    const rows        = Array.from(document.querySelectorAll(".pc-row"));
+    const noResults   = document.getElementById("noResults");
+
+    function normalizeOkForSort(row) {
+        const raw = (row.dataset.oknum || "").trim();
+        const num = parseInt(raw.replace(/\D/g, ""), 10);
+        return Number.isFinite(num) ? num : raw.toLowerCase();
+    }
+
+    function filterRows() {
+        const q = (searchInput.value || "").toLowerCase().trim();
+        let visibleCount = 0;
+
+        rows.forEach(r => {
+            const ok = r.dataset.ok || "";
+            const model = r.dataset.model || "";
+            const match = !q || ok.includes(q) || model.includes(q);
+
+            r.style.display = match ? "" : "none";
+            if (match) visibleCount++;
+        });
+
+        if (noResults) {
+            noResults.style.display = visibleCount === 0 ? "block" : "none";
+        }
+    }
+
+    function sortRows() {
+        const mode = sortSelect.value;
+
+        const sorted = rows.slice().sort((a, b) => {
+            const modelA = a.dataset.model || "";
+            const modelB = b.dataset.model || "";
+            const okA = normalizeOkForSort(a);
+            const okB = normalizeOkForSort(b);
+            const statusA = a.dataset.status;
+            const statusB = b.dataset.status;
+
+            switch (mode) {
+                case "model_asc":
+                    return modelA.localeCompare(modelB);
+                case "model_desc":
+                    return modelB.localeCompare(modelA);
+                case "ok_asc":
+                    if (typeof okA === "number" && typeof okB === "number") return okA - okB;
+                    return String(okA).localeCompare(String(okB));
+                case "ok_desc":
+                    if (typeof okA === "number" && typeof okB === "number") return okB - okA;
+                    return String(okB).localeCompare(String(okA));
+                case "status_loaned_first":
+                    if (statusA === statusB) return 0;
+                    return statusA === "loaned" ? -1 : 1;
+                case "status_free_first":
+                    if (statusA === statusB) return 0;
+                    return statusA === "free" ? -1 : 1;
+                default:
+                    return 0;
+            }
+        });
+
+        sorted.forEach(r => tableBody.appendChild(r));
+    }
+
+    function applyAll() {
+        sortRows();
+        filterRows();
+    }
+
+    searchInput?.addEventListener("input", filterRows);
+    sortSelect?.addEventListener("change", applyAll);
+    clearBtn?.addEventListener("click", () => {
+        searchInput.value = "";
+        filterRows();
+        searchInput.focus();
+    });
+
+    applyAll();
+})();
+</script>
+
+{% endblock %}

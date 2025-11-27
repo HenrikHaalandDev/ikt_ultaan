@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ t('Nytt utlån') }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="borrower_name" class="form-label">{{ t('Navn på elev/ansatt *') }}</label>
+                            <input type="text" class="form-control" id="borrower_name" name="borrower_name" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="class_info" class="form-label">{{ t('Klasse') }}</label>
+                            <input type="text" class="form-control" id="class_info" name="class_info">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="borrower_phone" class="form-label">{{ t('Telefon') }}</label>
+                            <input type="text" class="form-control" id="borrower_phone" name="borrower_phone"
+                                   placeholder="{{ t('f.eks. 999 99 999') }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="item" class="form-label">{{ t('Hva er utlånt *') }}</label>
+                        <input type="text" class="form-control" id="item" name="item" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pc_id" class="form-label">{{ t('Velg PC (valgfritt)') }}</label>
+                        <select class="form-select" id="pc_id" name="pc_id">
+                            <option value="">{{ t('-- Ingen valgt --') }}</option>
+                            {% for pc in pcs %}
+                            <option value="{{ pc.id }}">{{ pc.ok_number }} — {{ pc.model_type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="value" class="form-label">{{ t('Verdisak') }}</label>
+                            <input type="text" class="form-control" id="value" name="value"
+                                   placeholder="{{ t('f.eks. 5000 kr') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="reason" class="form-label">{{ t('Hvorfor') }}</label>
+                            <input type="text" class="form-control" id="reason" name="reason">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="due_date" class="form-label">{{ t('Frist for innlevering') }}</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date">
+                        </div>
+                    </div>
+
+                    <div class="mb-3 text-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-2">{{ t('Avbryt') }}</a>
+                        <button type="submit" class="btn btn-primary">{{ t('Registrer utlån') }}</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-muted">
+                <small>{{ t('* Obligatoriske felt') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

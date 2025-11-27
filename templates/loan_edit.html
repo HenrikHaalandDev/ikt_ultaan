@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+
+      <div class="card shadow-sm border-0">
+        <!-- Header -->
+        <div class="card-header bg-primary text-white p-3 border-0 rounded-top">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+            <div>
+              <h4 class="mb-0">Rediger utlån</h4>
+              <div class="small text-white-50">
+                Oppdater informasjonen og lagre når du er ferdig
+              </div>
+            </div>
+
+            <a href="{{ url_for('loan_detail', loan_id=loan.id) }}" class="btn btn-light btn-sm">
+              <i class="fas fa-arrow-left me-1"></i> Tilbake
+            </a>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Borrower section -->
+            <div class="p-3 bg-light rounded-3 mb-3">
+              <div class="fw-semibold mb-2">
+                <i class="fas fa-user me-2 text-muted"></i> Låntaker
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label small text-muted">Navn på elev/ansatt</label>
+                  <input class="form-control" name="borrower_name"
+                         value="{{ loan.borrower_name }}" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small text-muted">Klasse</label>
+                  <input class="form-control" name="class_info"
+                         value="{{ loan.class_info or '' }}">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small text-muted">Telefon</label>
+                  <input class="form-control" name="borrower_phone"
+                         value="{{ loan.borrower_phone or '' }}">
+                  <div class="form-text">Valgfritt, men nyttig ved oppfølging.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Equipment section -->
+            <div class="p-3 bg-light rounded-3 mb-3">
+              <div class="fw-semibold mb-2">
+                <i class="fas fa-laptop me-2 text-muted"></i> Utstyr
+              </div>
+
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label small text-muted">PC (fra oversikt)</label>
+                  <select class="form-select" name="pc_id">
+                    <option value="">-- Ingen PC valgt --</option>
+                    {% for pc in pcs %}
+                      <option value="{{ pc.id }}" {% if loan.pc_id == pc.id %}selected{% endif %}>
+                        {{ pc.ok_number }} — {{ pc.model_type }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                  <div class="form-text">
+                    Velg en PC bare hvis den er ledig.
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label small text-muted">Hva er utlånt</label>
+                  <input class="form-control" name="item"
+                         value="{{ loan.item }}" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small text-muted">Verdisak</label>
+                  <input class="form-control" name="value"
+                         value="{{ loan.value or '' }}">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small text-muted">Hvorfor</label>
+                  <input class="form-control" name="reason"
+                         value="{{ loan.reason or '' }}">
+                </div>
+              </div>
+            </div>
+
+            <!-- Dates section -->
+            <div class="p-3 bg-light rounded-3 mb-4">
+              <div class="fw-semibold mb-2">
+                <i class="fas fa-calendar-alt me-2 text-muted"></i> Frist
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label small text-muted">Frist for innlevering</label>
+                  <input type="date" class="form-control" name="due_date"
+                         value="{% if loan.due_date %}{{ loan.due_date.strftime('%Y-%m-%d') }}{% endif %}">
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+              <a href="{{ url_for('loan_detail', loan_id=loan.id) }}"
+                 class="btn btn-outline-secondary">
+                Avbryt
+              </a>
+              <button class="btn btn-success">
+                <i class="fas fa-save me-1"></i> Lagre endringer
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
