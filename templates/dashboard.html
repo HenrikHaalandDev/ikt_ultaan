@@ -477,5 +477,9 @@
         // Initial filter
         filterTables();
     })();
+      // Refresh every 5 minutes
+  setInterval(() => {
+    location.reload();
+  }, 5 * 60 * 1000);
 </script>
 {% endblock %}
