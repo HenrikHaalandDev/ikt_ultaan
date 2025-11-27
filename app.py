@@ -26,12 +26,19 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "FYS8gh49g4jgjS6h4hG4sjg4g4g4")
 app.config['WTF_CSRF_SECRET_KEY'] = os.getenv("WTF_CSRF_SECRET_KEY", "g8GJg48gjGjg48gj48jg93jg")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///loan_system.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app = Flask(__name__)
 
-# Init extensions
-db = SQLAlchemy(app)
-csrf = CSRFProtect(app)
+# OLD (hardcoded sqlite file)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///loan_system.db'
+
+# NEW
+db_url = os.getenv("DATABASE_URL", "sqlite:///loan_system.db")
+# Render sometimes gives urls starting with postgres://, SQLAlchemy expects postgresql://
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 # -------------------- TRANSLATIONS --------------------
