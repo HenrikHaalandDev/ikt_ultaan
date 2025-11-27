@@ -8,7 +8,9 @@
         <h4 class="mb-0">{{ t('Rediger PC') }}</h4>
       </div>
       <div class="card-body">
-        <form method="post">
+
+        {# --- EDIT FORM --- #}
+        <form method="post" action="{{ url_for('edit_pc', pc_id=pc.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           <div class="mb-3">
@@ -33,11 +35,24 @@
             <a href="{{ url_for('pc_inventory') }}" class="btn btn-secondary me-2">
               {{ t('Avbryt') }}
             </a>
+
             <button type="submit" class="btn btn-primary">
               {{ t('Lagre') }}
             </button>
           </div>
         </form>
+
+        {# --- DELETE FORM (separate, safer) --- #}
+        <form method="post"
+              action="{{ url_for('delete_pc', pc_id=pc.id) }}"
+              class="text-end mt-2"
+              onsubmit="return confirm('{{ t('Er du sikker på at du vil slette denne PC-en?') }}');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">
+            {{ t('Slett')}}
+          </button>
+        </form>
+
       </div>
     </div>
   </div>

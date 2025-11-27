@@ -731,6 +731,24 @@ def edit_pc(pc_id):
     return render_template('edit_pc.html', pc=pc)
 
 
+# ✅ DELETE PC ROUTE
+@app.route('/pcs/<int:pc_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_pc(pc_id):
+    pc = PC.query.get_or_404(pc_id)
+
+    try:
+        db.session.delete(pc)
+        db.session.commit()
+        flash("PC slettet fra lager.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("Noe gikk galt ved sletting av PC.", "danger")
+
+    return redirect(url_for('pc_inventory'))
+
+
 # -------------------- ADMIN USERS --------------------
 
 @app.route('/admin')
