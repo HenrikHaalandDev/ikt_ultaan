@@ -22,16 +22,16 @@ except Exception:
 
 app = Flask(__name__)
 
-# Bruk en statisk SECRET_KEY (sett en sikker verdi i miljøvariabel i produksjon)
+# Secrets
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "FYS8gh49g4jgjS6h4hG4sjg4g4g4")
 app.config['WTF_CSRF_SECRET_KEY'] = os.getenv("WTF_CSRF_SECRET_KEY", "g8GJg48gjGjg48gj48jg93jg")
 
 # --- Database setup (Render + local) ---
-# Locally: falls back to SQLite file
-# On Render: uses DATABASE_URL from environment (PostgreSQL)
+# On Render: uses DATABASE_URL (Postgres)
+# Locally: falls back to SQLite file loan_system.db
 db_url = os.getenv("DATABASE_URL", "sqlite:///loan_system.db")
 
-# Render sometimes gives postgres://, but SQLAlchemy wants postgresql://
+# If Render gives postgres://, convert to postgresql:// for SQLAlchemy
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
