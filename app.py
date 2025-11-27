@@ -54,7 +54,6 @@ translations = {
         "Dashboard": "Dashboard",
         "PC-oversikt": "PC inventory",
         "Nytt utlån": "New loan",
-        "Statistikk": "Statistics",
         "Admin panel": "Admin panel",
         "Admin": "Admin",
         "Meny": "Menu",
@@ -873,81 +872,6 @@ def profile():
         return redirect(url_for('profile'))
 
     return render_template('user_profile.html', user=user)
-
-
-# # -------------------- STATS --------------------
-
-# @app.route('/stats')
-# @login_required
-# @admin_required
-# def stats():
-#     # Total counts
-#     total_loans = Loan.query.count()
-#     total_active = Loan.query.filter_by(is_returned=False).count()
-#     total_returned = Loan.query.filter_by(is_returned=True).count()
-
-#     today_local = local_today()
-
-#     # Count overdue directly in DB instead of Python looping
-#     overdue_count = Loan.query.filter(
-#         Loan.is_returned.is_(False),
-#         Loan.due_date.isnot(None),
-#         func.date(Loan.due_date) < today_local.isoformat()
-#     ).count()
-
-#     # Distinct borrowers & items
-#     distinct_borrowers = db.session.query(func.count(func.distinct(Loan.borrower_name))).scalar() or 0
-#     distinct_items = db.session.query(func.count(func.distinct(Loan.item))).scalar() or 0
-
-#     # Top 5 most loaned items
-#     top_items = (
-#         db.session.query(Loan.item, func.count(Loan.id).label("count"))
-#         .group_by(Loan.item)
-#         .order_by(func.count(Loan.id).desc())
-#         .limit(5)
-#         .all()
-#     )
-
-#     # Top 5 classes with most loans (ignore null/empty)
-#     top_classes = (
-#         db.session.query(Loan.class_info, func.count(Loan.id).label("count"))
-#         .filter(Loan.class_info.isnot(None), Loan.class_info != "")
-#         .group_by(Loan.class_info)
-#         .order_by(func.count(Loan.id).desc())
-#         .limit(5)
-#         .all()
-#     )
-
-#     # Loans per month (based on checkout_date) for timeline (SQLite strftime)
-#     monthly_raw = (
-#         db.session.query(
-#             func.strftime('%Y-%m', Loan.checkout_date).label("month"),
-#             func.count(Loan.id).label("count")
-#         )
-#         .group_by("month")
-#         .order_by("month")
-#         .all()
-#     )
-
-#     # Convert to a simple list of dicts for template
-#     monthly_stats = [
-#         {"month": row.month, "count": row.count}
-#         for row in monthly_raw if row.month is not None
-#     ]
-
-#     return render_template(
-#         'stats.html',
-#         total_loans=total_loans,
-#         total_active=total_active,
-#         total_returned=total_returned,
-#         overdue_count=overdue_count,
-#         distinct_borrowers=distinct_borrowers,
-#         distinct_items=distinct_items,
-#         top_items=top_items,
-#         top_classes=top_classes,
-#         monthly_stats=monthly_stats
-#     )
-
 
 # -------------------- MAIN --------------------
 
