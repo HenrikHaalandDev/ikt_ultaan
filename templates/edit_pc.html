@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">{{ t('Rediger PC') }}</h4>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label class="form-label">{{ t('OK-nummer / serienummer *') }}</label>
+            <input type="text" class="form-control" name="ok_number"
+                   value="{{ pc.ok_number }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">{{ t('Modelltype *') }}</label>
+            <input type="text" class="form-control" name="model_type"
+                   value="{{ pc.model_type }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">{{ t('Notater') }}</label>
+            <input type="text" class="form-control" name="notes"
+                   value="{{ pc.notes or '' }}">
+          </div>
+
+          <div class="text-end">
+            <a href="{{ url_for('pc_inventory') }}" class="btn btn-secondary me-2">
+              {{ t('Avbryt') }}
+            </a>
+            <button type="submit" class="btn btn-primary">
+              {{ t('Lagre') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

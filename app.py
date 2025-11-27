@@ -5,8 +5,17 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 from functools import wraps
-from zoneinfo import ZoneInfo
 from sqlalchemy import func
+
+# --- timezone (safe) ---
+try:
+    from zoneinfo import ZoneInfo
+    OSLO_TZ = ZoneInfo("Europe/Oslo")
+    UTC_TZ = ZoneInfo("UTC")
+except Exception:
+    # If tzdata is missing, ZoneInfo("Europe/Oslo") fails on some systems.
+    OSLO_TZ = None
+    UTC_TZ = None
 
 
 # -------------------- APP CONFIG --------------------
@@ -16,7 +25,6 @@ app = Flask(__name__)
 # Bruk en statisk SECRET_KEY (sett en sikker verdi i miljøvariabel i produksjon)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "FYS8gh49g4jgjS6h4hG4sjg4g4g4")
 app.config['WTF_CSRF_SECRET_KEY'] = os.getenv("WTF_CSRF_SECRET_KEY", "g8GJg48gjGjg48gj48jg93jg")
-
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///loan_system.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -185,11 +193,17 @@ translations = {
         "Ingen treff.": "No results.",
         "Ingen PC-er registrert ennå.": "No PCs registered yet.",
 
-        # Add PC
+        # Add PC / Edit PC
         "OK-nummer / serienummer *": "OK number / serial number *",
         "Modelltype *": "Model type *",
         "Notater": "Notes",
         "Lagre": "Save",
+        "Rediger PC": "Edit PC",
+        "PC oppdatert.": "PC updated.",
+        "Kan ikke slette PC som er utlånt.": "Cannot delete a PC that is loaned out.",
+        "Kan ikke slette PC som har historikk. Marker evt. som utgått i notater.":
+            "Cannot delete a PC with history. Mark as retired in notes instead.",
+        "PC slettet.": "PC deleted.",
 
         # Admin panel
         "Admin Panel": "Admin panel",
@@ -305,18 +319,26 @@ class Loan(db.Model):
 # -------------------- HELPERS --------------------
 
 def utc_to_local(utc_dt):
-    """Konverterer UTC-datetime til Europe/Oslo."""
+    """Konverterer UTC-datetime til Europe/Oslo. Faller tilbake til UTC hvis tzdata mangler."""
     if utc_dt is None:
         return None
-    local_tz = ZoneInfo('Europe/Oslo')
+
+    # If no tz DB, just return naive/UTC-ish time
+    if OSLO_TZ is None:
+        return utc_dt
+
+    local_tz = OSLO_TZ
     if utc_dt.tzinfo is None:
-        utc_dt = utc_dt.replace(tzinfo=ZoneInfo('UTC'))
+        utc_dt = utc_dt.replace(tzinfo=UTC_TZ)
     return utc_dt.astimezone(local_tz)
 
 
 def local_today():
-    """Return today's date in Europe/Oslo."""
-    return datetime.now(ZoneInfo('Europe/Oslo')).date()
+    """Return today's date in Europe/Oslo. Faller tilbake til lokal serverdato hvis tzdata mangler."""
+    if OSLO_TZ is None:
+        return datetime.now().date()
+    return datetime.now(OSLO_TZ).date()
+
 
 def login_required(f):
     @wraps(f)
@@ -424,7 +446,6 @@ def dashboard():
     returned_loans = Loan.query.filter_by(is_returned=True).all()
 
     today_local = local_today()
-
 
     for loan in active_loans + returned_loans:
         loan.checkout_date_local = utc_to_local(loan.checkout_date)
@@ -649,7 +670,8 @@ def pc_inventory():
     return render_template('pc_inventory.html', pcs=pcs)
 
 
-@app.route('/pcs/add', methods=['GET', 'POST'])
+# ✅ ADD PC ROUTE (was missing) — endpoint name must be "add_pc"
+@app.route('/pcs/add', methods=['GET', 'POST'], endpoint="add_pc")
 @login_required
 @admin_required
 def add_pc():
@@ -662,11 +684,12 @@ def add_pc():
             flash("OK-nummer og modelltype er påkrevd.", "danger")
             return redirect(url_for('add_pc'))
 
-        if PC.query.filter_by(ok_number=ok_number).first():
+        existing = PC.query.filter_by(ok_number=ok_number).first()
+        if existing:
             flash("Denne PC-en finnes allerede.", "danger")
             return redirect(url_for('add_pc'))
 
-        pc = PC(ok_number=ok_number, model_type=model_type, notes=notes)
+        pc = PC(ok_number=ok_number, model_type=model_type, notes=notes or None)
         db.session.add(pc)
         db.session.commit()
 
@@ -674,6 +697,38 @@ def add_pc():
         return redirect(url_for('pc_inventory'))
 
     return render_template('add_pc.html')
+
+
+@app.route('/pcs/<int:pc_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_pc(pc_id):
+    pc = PC.query.get_or_404(pc_id)
+
+    if request.method == 'POST':
+        ok_number = request.form.get('ok_number', '').strip()
+        model_type = request.form.get('model_type', '').strip()
+        notes = request.form.get('notes', '').strip()
+
+        if not ok_number or not model_type:
+            flash("OK-nummer og modelltype er påkrevd.", "danger")
+            return redirect(url_for('edit_pc', pc_id=pc.id))
+
+        # prevent OK-number collision with another PC
+        existing = PC.query.filter(PC.ok_number == ok_number, PC.id != pc.id).first()
+        if existing:
+            flash("Denne PC-en finnes allerede.", "danger")
+            return redirect(url_for('edit_pc', pc_id=pc.id))
+
+        pc.ok_number = ok_number
+        pc.model_type = model_type
+        pc.notes = notes
+
+        db.session.commit()
+        flash("PC oppdatert.", "success")
+        return redirect(url_for('pc_inventory'))
+
+    return render_template('edit_pc.html', pc=pc)
 
 
 # -------------------- ADMIN USERS --------------------
@@ -792,6 +847,8 @@ def profile():
     return render_template('user_profile.html', user=user)
 
 
+# -------------------- STATS --------------------
+
 @app.route('/stats')
 @login_required
 @admin_required
@@ -809,7 +866,6 @@ def stats():
         Loan.due_date.isnot(None),
         func.date(Loan.due_date) < today_local.isoformat()
     ).count()
-
 
     # Distinct borrowers & items
     distinct_borrowers = db.session.query(func.count(func.distinct(Loan.borrower_name))).scalar() or 0
