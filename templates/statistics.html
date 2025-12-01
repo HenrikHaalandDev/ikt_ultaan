@@ -1,0 +1,392 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-shell">
+    <div class="dashboard-shell-inner">
+
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <div class="page-kicker mb-1">
+                    <i class="fa-regular fa-circle-dot me-1"></i> {{ t('Statistikk') }}
+                </div>
+                <h2 class="mb-1 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-chart-column text-primary"></i>
+                    <span>{{ t('Statistikk') }}</span>
+                </h2>
+                <p class="text-muted mb-0">
+                    {{ t('Oversikt over bruk av utlånssystemet – mest lånte ting, klasser og utvikling over tid.') }}
+                </p>
+            </div>
+        </div>
+
+        {% if not has_any_data %}
+        <div class="alert alert-info mb-0">
+            {{ t('Ingen data tilgjengelig ennå.') }}
+        </div>
+        {% else %}
+
+        <!-- Top stat cards -->
+        <div class="row g-3 mb-3">
+            <!-- Total loans -->
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Totalt utlån') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value">{{ total_loans }}</div>
+                                <div class="stat-sub">{{ t('Registrerte utlån totalt') }}</div>
+                            </div>
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active -->
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Aktive') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value">{{ active_count }}</div>
+                                <div class="stat-sub">{{ t('Utlån som ikke er returnert') }}</div>
+                            </div>
+                            <i class="fa-solid fa-circle-dot text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overdue -->
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Forfalte') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value text-danger">{{ overdue_count }}</div>
+                                <div class="stat-sub">{{ t('Frist er passert') }}</div>
+                            </div>
+                            <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Returned -->
+            <div class="col-md-3 col-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Returnerte') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value text-success">{{ returned_count }}</div>
+                                <div class="stat-sub">{{ t('Utlån som er avsluttet') }}</div>
+                            </div>
+                            <i class="fa-solid fa-box-archive text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Borrowers + equipment + PC usage -->
+        <div class="row g-3 mb-4">
+            <!-- Borrowers & items -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Brukere og utstyr') }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="stat-value">{{ unique_borrowers }}</div>
+                                <div class="stat-sub">{{ t('Unike låntakere') }}</div>
+                            </div>
+                            <div>
+                                <div class="stat-value">{{ unique_items }}</div>
+                                <div class="stat-sub">{{ t('Unike utstyrstyper') }}</div>
+                            </div>
+                        </div>
+                        <div class="text-muted small mt-2">
+                            {{ t('Basert på unike kombinasjoner av navn og utstyr registrert i utlånene.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PC usage snapshot -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('PC-bruk nå') }}</p>
+                        {% if total_pcs == 0 %}
+                        <div class="text-muted small">
+                            {{ t('Ingen PC-er registrert ennå.') }}
+                        </div>
+                        {% else %}
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div>
+                                <div class="stat-value">{{ pcs_usage_pct }}%</div>
+                                <div class="stat-sub">{{ t('Av registrerte PC-er er i bruk') }}</div>
+                            </div>
+                            <div class="text-end small">
+                                <div>{{ t('Totalt') }}: <strong>{{ total_pcs }}</strong></div>
+                                <div>{{ t('Utlånt') }}: <strong>{{ pcs_in_use }}</strong></div>
+                                <div>{{ t('Ledig') }}: <strong>{{ pcs_free }}</strong></div>
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar"
+                                 style="width: {{ pcs_usage_pct }}%;"
+                                 aria-valuenow="{{ pcs_usage_pct }}" aria-valuemin="0"
+                                 aria-valuemax="100"></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loan duration + loans per month chart -->
+        <div class="row g-3 mb-4">
+            <!-- Loan durations -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <p class="stat-label">{{ t('Lånetid') }}</p>
+                        {% if avg_duration_days == 0 and median_duration_days == 0 %}
+                        <div class="text-muted small">
+                            {{ t('For lite data til å beregne lånetid.') }}
+                        </div>
+                        {% else %}
+                        <ul class="list-unstyled mb-0 small">
+                            <li>
+                                <strong>{{ t('Gjennomsnittlig lånetid') }}:</strong>
+                                {{ avg_duration_days }} {{ t('dager') }}
+                            </li>
+                            <li>
+                                <strong>{{ t('Median lånetid') }}:</strong>
+                                {{ median_duration_days }} {{ t('dager') }}
+                            </li>
+                            <li>
+                                <strong>{{ t('Lengste registrerte lån') }}:</strong>
+                                {{ max_duration_days }} {{ t('dager') }}
+                            </li>
+                            <li class="mt-2">
+                                <strong>{{ t('Gjennomsnittlig antall forfalte dager') }}:</strong>
+                                {{ avg_overdue_days }} {{ t('dager') }}
+                            </li>
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loans per month chart -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body" style="min-height: 260px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <p class="stat-label mb-0">{{ t('Utlån per måned') }}</p>
+                            <span class="badge-pill-soft">
+                                <i class="fa-regular fa-calendar me-1"></i>
+                                {{ t('Relativt') }}
+                            </span>
+                        </div>
+                        {% if loans_per_month_labels %}
+                        <div style="height: 200px;">
+                            <canvas id="loansPerMonthChart"></canvas>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small">
+                            {{ t('Ingen data tilgjengelig ennå.') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Peak hours + top lists -->
+        <div class="row g-3">
+            <!-- Peak borrowing hours chart -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body" style="min-height: 260px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <p class="stat-label mb-0">{{ t('Tidsrom med flest utlån') }}</p>
+                            <span class="badge-pill-soft">
+                                <i class="fa-regular fa-clock me-1"></i>
+                                {{ t('Per time på døgnet') }}
+                            </span>
+                        </div>
+                        {% if has_peak_data %}
+                        <div style="height: 200px;">
+                            <canvas id="peakHoursChart"></canvas>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small">
+                            {{ t('Ingen utlån registrert ennå.') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top lists: items + classes -->
+            <div class="col-md-6">
+                <div class="row g-3 h-100">
+                    <!-- Most loaned items -->
+                    <div class="col-12">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <p class="stat-label">{{ t('Mest utlånte ting') }}</p>
+                                {% if top_items %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ t('Utstyr') }}</th>
+                                                <th class="text-end">{{ t('Antall utlån') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item, count in top_items %}
+                                            {% if item %}
+                                            <tr>
+                                                <td>{{ item_t(item) }}</td>
+                                                <td class="text-end">{{ count }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-muted small">
+                                    {{ t('Ingen utlån registrert ennå.') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Classes with most loans -->
+                    <div class="col-12">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <p class="stat-label">{{ t('Klasser med flest utlån') }}</p>
+                                {% if top_classes %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ t('Klasse') }}</th>
+                                                <th class="text-end">{{ t('Antall utlån') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for cls, count in top_classes %}
+                                            {% if cls %}
+                                            <tr>
+                                                <td>{{ class_t(cls) }}</td>
+                                                <td class="text-end">{{ count }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-muted small">
+                                    {{ t('Ingen klasser registrert på utlån ennå.') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+{% if has_any_data %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% if loans_per_month_labels %}
+<script>
+    (function () {
+        const ctx = document.getElementById('loansPerMonthChart');
+        if (!ctx) return;
+
+        const labels = {{ loans_per_month_labels|tojson }};
+        const data = {{ loans_per_month_counts|tojson }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '{{ t("Antall utlån") }}',
+                    data: data,
+                    fill: false,
+                    tension: 0.25
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        precision: 0
+                    }
+                }
+            }
+        });
+    })();
+</script>
+{% endif %}
+
+{% if has_peak_data %}
+<script>
+    (function () {
+        const ctx = document.getElementById('peakHoursChart');
+        if (!ctx) return;
+
+        const labels = {{ peak_hours_labels|tojson }};
+        const data = {{ peak_hours_counts|tojson }};
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '{{ t("Antall utlån") }}',
+                    data: data
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        precision: 0
+                    }
+                }
+            }
+        });
+    })();
+</script>
+{% endif %}
+{% endif %}
+
+{% endblock %}

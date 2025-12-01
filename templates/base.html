@@ -513,6 +513,12 @@
                     <i class="fa-solid fa-chart-line me-2"></i>
                     <span>{{ t('Dashboard') }}</span>
                 </a>
+                
+                <a href="{{ url_for('statistics') }}"
+                    class="list-group-item list-group-item-action d-flex align-items-center {% if request.endpoint == 'statistics' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-column me-2"></i>
+                    <span>{{ t('Statistikk') }}</span>
+                </a>
 
                 <a href="{{ url_for('pc_inventory') }}"
                     class="list-group-item list-group-item-action d-flex align-items-center {% if request.endpoint == 'pc_inventory' %}active{% endif %}">
@@ -626,11 +632,9 @@
                 localStorage.setItem(storageKey, next);
             });
         })();
-            // Refresh every 5 minutes
-    setInterval(() => {
-        location.reload();
-    }, 1 * 60 * 1000);
+        // Refresh every 5 minutes
+        setInterval(() => {
+            location.reload();
+        }, 1 * 60 * 1000);
     </script>
-</body>
-
-</html>
+</

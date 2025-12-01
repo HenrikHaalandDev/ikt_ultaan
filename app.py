@@ -6,6 +6,10 @@ from datetime import datetime
 import os
 from functools import wraps
 from sqlalchemy import func
+import statistics as py_stats  # NEW
+from collections import defaultdict
+
+
 
 # --- timezone (safe) ---
 try:
@@ -267,6 +271,18 @@ translations = {
         "Klasse": "Class",
         "Ingen utlån registrert ennå.": "No loans registered yet.",
         "Ingen klasser registrert på utlån ennå.": "No classes registered on loans yet.",
+        "PC-bruk nå": "PC usage now",
+        "Av registrerte PC-er er i bruk": "Of registered PCs are in use",
+        "For lite data til å beregne lånetid.": "Too little data to calculate loan time.",
+        "Lånetid": "Loan duration",
+        "Gjennomsnittlig lånetid": "Average loan duration",
+        "Median lånetid": "Median loan duration",
+        "Lengste registrerte lån": "Longest registered loan",
+        "Gjennomsnittlig antall forfalte dager": "Average number of overdue days",
+        "dager": "days",
+        "Tidsrom med flest utlån": "Time periods with most loans",
+        "Per time på døgnet": "Per hour of the day",
+
 
         # Dynamic label value if ever needed
         "Ansatt": "Employee",
@@ -738,6 +754,181 @@ def edit_loan(loan_id):
         is_admin=is_admin,
         is_owner=is_owner
     )
+
+
+@app.route('/statistics')
+@login_required
+def statistics():
+    # --- basic counts ---
+    total_loans = Loan.query.count()
+    active_loans = Loan.query.filter_by(is_returned=False).all()
+    returned_loans = Loan.query.filter_by(is_returned=True).all()
+
+    today_local = local_today()
+
+    # reuse overdue logic
+    overdue_count = 0
+    for loan in active_loans:
+        loan.checkout_date_local = utc_to_local(loan.checkout_date)
+        if loan.due_date is not None:
+            due_dt = loan.due_date
+            # interpret stored due_date as local if tzdata is available
+            if OSLO_TZ is not None and due_dt.tzinfo is None:
+                due_dt = due_dt.replace(tzinfo=OSLO_TZ)
+            if due_dt.date() < today_local:
+                overdue_count += 1
+
+    active_count = len(active_loans)
+    returned_count = len(returned_loans)
+
+    # --- unique borrowers & items ---
+    unique_borrowers = db.session.query(
+        func.count(func.distinct(Loan.borrower_name))
+    ).scalar() or 0
+
+    unique_items = db.session.query(
+        func.count(func.distinct(Loan.item))
+    ).scalar() or 0
+
+    # --- loans per month (checkout_date, local) ---
+    loans = Loan.query.all()
+    per_month = defaultdict(int)
+
+    for loan in loans:
+        local_dt = utc_to_local(loan.checkout_date)
+        if local_dt is None:
+            continue
+        key = local_dt.strftime("%Y-%m")  # e.g. 2025-01
+        per_month[key] += 1
+
+    months_sorted = sorted(per_month.keys())
+    loans_per_month_labels = months_sorted
+    loans_per_month_counts = [per_month[m] for m in months_sorted]
+
+    # --- PC usage snapshot ---
+    total_pcs = PC.query.count()
+    # distinct PC IDs that are currently on an active loan
+    pcs_in_use = db.session.query(
+        func.count(func.distinct(Loan.pc_id))
+    ).filter(
+        Loan.is_returned == False,
+        Loan.pc_id.isnot(None)
+    ).scalar() or 0
+
+    pcs_free = max(total_pcs - pcs_in_use, 0)
+    pcs_usage_pct = 0
+    if total_pcs > 0:
+        pcs_usage_pct = round((pcs_in_use / total_pcs) * 100)
+
+    # --- loan duration statistics ---
+    durations_days = []
+    overdue_days = []
+
+    for loan in returned_loans:
+        co_local = utc_to_local(loan.checkout_date)
+        ret_local = utc_to_local(loan.return_date)
+        if not co_local or not ret_local:
+            continue
+
+        # total duration in days (float)
+        delta_sec = (ret_local - co_local).total_seconds()
+        dur_days = max(delta_sec / 86400.0, 0)
+        durations_days.append(dur_days)
+
+        # overdue part (if due_date exists)
+        if loan.due_date is not None:
+            due_dt = loan.due_date
+            if OSLO_TZ is not None and due_dt.tzinfo is None:
+                due_dt = due_dt.replace(tzinfo=OSLO_TZ)
+
+            if ret_local.date() > due_dt.date():
+                odelta = (ret_local.date() - due_dt.date()).days
+                overdue_days.append(max(odelta, 0))
+
+    # also count currently overdue active loans as overdue days up to today
+    for loan in active_loans:
+        if loan.due_date is not None:
+            due_dt = loan.due_date
+            if OSLO_TZ is not None and due_dt.tzinfo is None:
+                due_dt = due_dt.replace(tzinfo=OSLO_TZ)
+            if due_dt.date() < today_local:
+                # days overdue so far
+                odelta = (today_local - due_dt.date()).days
+                overdue_days.append(max(odelta, 0))
+
+    avg_duration_days = median_duration_days = max_duration_days = 0
+    if durations_days:
+        avg_duration_days = round(py_stats.mean(durations_days), 1)
+        median_duration_days = round(py_stats.median(durations_days), 1)
+        max_duration_days = round(max(durations_days), 1)
+
+    avg_overdue_days = 0
+    if overdue_days:
+        avg_overdue_days = round(py_stats.mean(overdue_days), 1)
+
+    # --- peak borrowing hours (based on checkout_date local hour) ---
+    hours_count = defaultdict(int)
+    for loan in loans:
+        co_local = utc_to_local(loan.checkout_date)
+        if not co_local:
+            continue
+        hour = co_local.hour  # 0-23
+        hours_count[hour] += 1
+
+    # sort hours 0..23 and build labels like "08:00"
+    peak_hours_labels = []
+    peak_hours_counts = []
+    for h in sorted(hours_count.keys()):
+        label = f"{h:02d}:00"
+        peak_hours_labels.append(label)
+        peak_hours_counts.append(hours_count[h])
+
+    has_any_data = total_loans > 0
+    has_peak_data = len(peak_hours_labels) > 0
+
+    return render_template(
+        'statistics.html',
+        total_loans=total_loans,
+        active_count=active_count,
+        overdue_count=overdue_count,
+        returned_count=returned_count,
+        unique_borrowers=unique_borrowers,
+        unique_items=unique_items,
+        loans_per_month_labels=loans_per_month_labels,
+        loans_per_month_counts=loans_per_month_counts,
+        top_items=(
+            db.session.query(Loan.item, func.count(Loan.id))
+            .group_by(Loan.item)
+            .order_by(func.count(Loan.id).desc())
+            .limit(5)
+            .all()
+        ),
+        top_classes=(
+            db.session.query(Loan.class_info, func.count(Loan.id))
+            .filter(Loan.class_info.isnot(None), Loan.class_info != "")
+            .group_by(Loan.class_info)
+            .order_by(func.count(Loan.id).desc())
+            .limit(5)
+            .all()
+        ),
+        has_any_data=has_any_data,
+        # PC usage
+        total_pcs=total_pcs,
+        pcs_in_use=pcs_in_use,
+        pcs_free=pcs_free,
+        pcs_usage_pct=pcs_usage_pct,
+        # durations
+        avg_duration_days=avg_duration_days,
+        median_duration_days=median_duration_days,
+        max_duration_days=max_duration_days,
+        avg_overdue_days=avg_overdue_days,
+        # peak hours
+        peak_hours_labels=peak_hours_labels,
+        peak_hours_counts=peak_hours_counts,
+        has_peak_data=has_peak_data,
+    )
+
+
 
 
 # -------------------- PC INVENTORY --------------------
