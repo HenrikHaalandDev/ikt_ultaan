@@ -102,6 +102,7 @@ translations = {
         "Utlån som ikke er returnert": "Loans not yet returned",
         "Forfalte utlån": "Overdue loans",
         "Frist passert": "Due date passed",
+        "Ingen frist": "No due date",
         "Returnert i dag": "Returned today",
         "Registrert som returnert i dag": "Marked as returned today",
         "Totalt returnert": "Total returned",
@@ -109,7 +110,7 @@ translations = {
         "Returnerte": "Returned",
 
         "Søk": "Search",
-        "Søk på navn, klasse eller utstyr...": "Search by name, class or item...",
+        "Søk på navn, gruppe eller utstyr...": "Search by name, group or item...",
         "Vis bare mine utlån": "Show only my loans",
         "Vis kun forfalte (aktive)": "Show only overdue (active)",
         "Sorter:": "Sort:",
@@ -129,7 +130,7 @@ translations = {
 
         # Column headers
         "Navn": "Name",
-        "Klasse": "Class",
+        "Gruppe": "Group",
         "Telefon": "Phone",
         "Utstyr": "Item",
         "PC": "PC",
