@@ -309,6 +309,29 @@ def translate_item(text: str) -> str:
     return text
 
 
+# --------- DYNAMIC CLASS TRANSLATION (e.g. 'Ansatt' -> 'Staff') ---------
+
+class_translations_en = {
+    "Ansatt": "Employee ",
+    "ansatt": "Employee ",
+    # add more if you like later:
+    "Lærer": "Teacher",
+    "lærer": "Teacher",
+}
+
+def translate_class(text: str) -> str:
+    """
+    Translate dynamic class info like 'Ansatt' when lang=en.
+    Real class names like '3IDA' will just pass through unchanged.
+    """
+    if not text:
+        return text
+    lang = session.get("lang", "no")
+    if lang == "en":
+        return class_translations_en.get(text, text)
+    return text
+
+
 # -------------------- MODELS --------------------
 
 class User(db.Model):
@@ -404,9 +427,11 @@ def inject_admin_flag():
     return {
         "is_admin": session.get("is_admin", False),
         "t": translate,
-        "item_t": translate_item,  # 🔥 use this in templates for loan.item
+        "item_t": translate_item,
+        "class_t": translate_class,  # 👈 new helper
         "current_lang": session.get("lang", "no"),
     }
+
 
 
 # -------------------- DB INIT + SEED --------------------

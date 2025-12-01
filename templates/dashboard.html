@@ -104,16 +104,16 @@
         <div class="loan-tabs-wrapper mb-3">
             <ul class="nav nav-pills mb-0" id="loanTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button"
-                            role="tab">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active"
+                        type="button" role="tab">
                         <i class="fa-solid fa-circle-dot me-1 text-success"></i>
                         {{ t('Aktive utlån') }}
                         <span class="badge bg-light text-dark ms-2">{{ active_loans|length }}</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="returned-tab" data-bs-toggle="tab" data-bs-target="#returned" type="button"
-                            role="tab">
+                    <button class="nav-link" id="returned-tab" data-bs-toggle="tab" data-bs-target="#returned"
+                        type="button" role="tab">
                         <i class="fa-solid fa-box-archive me-1"></i>
                         {{ t('Returnerte') }}
                         <span class="badge bg-light text-dark ms-2">{{ returned_loans|length }}</span>
@@ -128,7 +128,7 @@
                 <div class="col-md-5">
                     <label for="loanSearch" class="form-label mb-1">{{ t('Søk') }}</label>
                     <input type="text" id="loanSearch" class="form-control"
-                           placeholder="{{ t('Søk på navn, klasse eller utstyr...') }}">
+                        placeholder="{{ t('Søk på navn, klasse eller utstyr...') }}">
                 </div>
                 <div class="col-md-3">
                     <div class="form-check mt-3">
@@ -199,43 +199,42 @@
                                     <tr class="{% if loan.overdue %}table-danger{% endif %}"
                                         data-name="{{ loan.borrower_name|lower }}"
                                         data-class="{{ loan.class_info|lower if loan.class_info }}"
-                                        data-item="{{ loan.item|lower }}"
-                                        data-pc="{{ loan.pc_label|lower }}"
+                                        data-item="{{ loan.item|lower }}" data-pc="{{ loan.pc_label|lower }}"
                                         data-owner="{{ loan.user_id }}"
                                         data-overdue="{{ '1' if loan.overdue else '0' }}"
                                         data-checkout="{{ loan.checkout_date_local.isoformat() }}"
                                         data-due="{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date }}">
                                         <td>{{ loan.borrower_name }}</td>
-                                        <td>{{ loan.class_info }}</td>
+                                        <td>{{ class_t(loan.class_info) }}</td>
                                         <td>{{ loan.borrower_phone or '' }}</td>
                                         <td>{{ item_t(loan.item) }}</td>
                                         <td>
                                             {% if loan.pc_label %}
-                                                {{ loan.pc_label }}
+                                            {{ loan.pc_label }}
                                             {% else %}
-                                                <span class="text-muted">{{ t('Ikke registrert') }}</span>
+                                            <span class="text-muted">{{ t('Ikke registrert') }}</span>
                                             {% endif %}
                                         </td>
                                         <td>{{ loan.checkout_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                         <td>
                                             {% if loan.due_date %}
-                                                {{ loan.due_date.strftime('%Y-%m-%d') }}
-                                                {% if loan.overdue %}
-                                                    <span class="badge bg-danger ms-1">{{ t('Forfalt') }}</span>
-                                                {% endif %}
+                                            {{ loan.due_date.strftime('%Y-%m-%d') }}
+                                            {% if loan.overdue %}
+                                            <span class="badge bg-danger ms-1">{{ t('Forfalt') }}</span>
+                                            {% endif %}
                                             {% else %}
-                                                <span class="text-muted">{{ t('Ingen frist') }}</span>
+                                            <span class="text-muted">{{ t('Ingen frist') }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             <a href="{{ url_for('loan_detail', loan_id=loan.id) }}"
-                                               class="btn btn-sm btn-outline-info btn-icon me-1">
+                                                class="btn btn-sm btn-outline-info btn-icon me-1">
                                                 <i class="fas fa-eye"></i> {{ t('Se') }}
                                             </a>
 
                                             {% if is_admin or loan.user_id == session.get('user_id') %}
                                             <form method="post" action="{{ url_for('return_loan', loan_id=loan.id) }}"
-                                                  class="d-inline">
+                                                class="d-inline">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn-sm btn-success btn-icon me-1">
                                                     <i class="fas fa-check"></i> {{ t('Returner') }}
@@ -245,8 +244,8 @@
 
                                             {% if is_admin %}
                                             <form method="post" action="{{ url_for('delete_loan', loan_id=loan.id) }}"
-                                                  class="d-inline"
-                                                  onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet?') }}');">
+                                                class="d-inline"
+                                                onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet?') }}');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger btn-icon">
                                                     <i class="fas fa-trash"></i> {{ t('Slett') }}
@@ -314,44 +313,42 @@
                                 </thead>
                                 <tbody>
                                     {% for loan in returned_loans %}
-                                    <tr
-                                        data-name="{{ loan.borrower_name|lower }}"
+                                    <tr data-name="{{ loan.borrower_name|lower }}"
                                         data-class="{{ loan.class_info|lower if loan.class_info }}"
-                                        data-item="{{ loan.item|lower }}"
-                                        data-pc="{{ loan.pc_label|lower }}"
+                                        data-item="{{ loan.item|lower }}" data-pc="{{ loan.pc_label|lower }}"
                                         data-owner="{{ loan.user_id }}"
                                         data-checkout="{{ loan.checkout_date_local.isoformat() }}"
                                         data-return="{{ loan.return_date_local.isoformat() }}"
                                         data-due="{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date }}">
                                         <td>{{ loan.borrower_name }}</td>
-                                        <td>{{ loan.class_info }}</td>
+                                        <td>{{ class_t(loan.class_info) }}</td>
                                         <td>{{ loan.borrower_phone or '' }}</td>
                                         <td>{{ item_t(loan.item) }}</td>
                                         <td>
                                             {% if loan.pc_label %}
-                                                {{ loan.pc_label }}
+                                            {{ loan.pc_label }}
                                             {% else %}
-                                                <span class="text-muted">{{ t('Ikke registrert') }}</span>
+                                            <span class="text-muted">{{ t('Ikke registrert') }}</span>
                                             {% endif %}
                                         </td>
                                         <td>{{ loan.checkout_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                         <td>
                                             {% if loan.due_date %}
-                                                {{ loan.due_date.strftime('%Y-%m-%d') }}
+                                            {{ loan.due_date.strftime('%Y-%m-%d') }}
                                             {% else %}
-                                                <span class="text-muted">{{ t('Ingen frist') }}</span>
+                                            <span class="text-muted">{{ t('Ingen frist') }}</span>
                                             {% endif %}
                                         </td>
                                         <td>{{ loan.return_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                         <td>
                                             <a href="{{ url_for('loan_detail', loan_id=loan.id) }}"
-                                               class="btn btn-sm btn-outline-info btn-icon me-1">
+                                                class="btn btn-sm btn-outline-info btn-icon me-1">
                                                 <i class="fas fa-eye"></i> {{ t('Se') }}
                                             </a>
                                             {% if is_admin %}
                                             <form method="post" action="{{ url_for('delete_loan', loan_id=loan.id) }}"
-                                                  class="d-inline"
-                                                  onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet?') }}');">
+                                                class="d-inline"
+                                                onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet?') }}');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger btn-icon">
                                                     <i class="fas fa-trash"></i> {{ t('Slett') }}

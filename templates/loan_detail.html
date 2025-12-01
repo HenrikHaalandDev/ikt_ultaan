@@ -13,13 +13,13 @@
               <h4 class="mb-0">{{ t('Utlån detaljer') }}</h4>
 
               {% if loan.is_returned %}
-                <span class="badge rounded-pill bg-success">
-                  <i class="fas fa-check me-1"></i> {{ t('Returnert') }}
-                </span>
+              <span class="badge rounded-pill bg-success">
+                <i class="fas fa-check me-1"></i> {{ t('Returnert') }}
+              </span>
               {% else %}
-                <span class="badge rounded-pill bg-warning text-dark">
-                  <i class="fas fa-clock me-1"></i> {{ t('Aktiv') }}
-                </span>
+              <span class="badge rounded-pill bg-warning text-dark">
+                <i class="fas fa-clock me-1"></i> {{ t('Aktiv') }}
+              </span>
               {% endif %}
             </div>
 
@@ -36,28 +36,28 @@
           <!-- Actions -->
           <div class="d-flex flex-wrap justify-content-end gap-2 mb-4">
             {% if (is_admin or is_owner) %}
-              <a href="{{ url_for('edit_loan', loan_id=loan.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-pen me-1"></i> {{ t('Rediger') }}
-              </a>
+            <a href="{{ url_for('edit_loan', loan_id=loan.id) }}" class="btn btn-primary btn-sm">
+              <i class="fas fa-pen me-1"></i> {{ t('Rediger') }}
+            </a>
             {% endif %}
 
             {% if not loan.is_returned and (is_admin or is_owner) %}
-              <form method="post" action="{{ url_for('return_loan', loan_id=loan.id) }}" class="d-inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-success btn-sm">
-                  <i class="fas fa-check me-1"></i> {{ t('Marker som returnert') }}
-                </button>
-              </form>
+            <form method="post" action="{{ url_for('return_loan', loan_id=loan.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-success btn-sm">
+                <i class="fas fa-check me-1"></i> {{ t('Marker som returnert') }}
+              </button>
+            </form>
             {% endif %}
 
             {% if is_admin %}
-              <form method="post" action="{{ url_for('delete_loan', loan_id=loan.id) }}" class="d-inline"
-                    onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet? Denne handlingen kan ikke angres.') }}');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  <i class="fas fa-trash me-1"></i> {{ t('Slett utlån') }}
-                </button>
-              </form>
+            <form method="post" action="{{ url_for('delete_loan', loan_id=loan.id) }}" class="d-inline"
+              onsubmit="return confirm('{{ t('Er du sikker på at du vil slette dette utlånet? Denne handlingen kan ikke angres.') }}');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-trash me-1"></i> {{ t('Slett utlån') }}
+              </button>
+            </form>
             {% endif %}
           </div>
 
@@ -76,7 +76,14 @@
             <div class="col-md-6">
               <div class="p-3 bg-light rounded-3 h-100">
                 <div class="text-muted small mb-1">{{ t('Klasse') }}</div>
-                <div class="fw-semibold">{{ loan.class_info or t('Ikke angitt') }}</div>
+                <div class="fw-semibold">
+                  {% if loan.class_info %}
+                  {{ class_t(loan.class_info) }}
+                  {% else %}
+                  {{ t('Ikke angitt') }}
+                  {% endif %}
+                </div>
+
               </div>
             </div>
 
@@ -85,19 +92,20 @@
               <div class="p-3 bg-light rounded-3 h-100">
                 <div class="text-muted small mb-2">{{ t('Telefon') }}</div>
                 {% if loan.borrower_phone %}
-                  <div class="d-flex align-items-center justify-content-between border rounded-3 bg-white px-3 py-2">
-                    <a href="tel:{{ loan.borrower_phone }}" class="text-decoration-none fw-semibold">
-                      <i class="fa-solid fa-phone me-2 text-success"></i>{{ loan.borrower_phone }}
-                    </a>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="copyPhoneBtn" title="Kopier nummer">
-                      <i class="fa-regular fa-copy"></i>
-                    </button>
-                  </div>
-                  <div class="text-muted small mt-1">
-                    {{ t('Klikk nummeret for å ringe.') }}
-                  </div>
+                <div class="d-flex align-items-center justify-content-between border rounded-3 bg-white px-3 py-2">
+                  <a href="tel:{{ loan.borrower_phone }}" class="text-decoration-none fw-semibold">
+                    <i class="fa-solid fa-phone me-2 text-success"></i>{{ loan.borrower_phone }}
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="copyPhoneBtn"
+                    title="Kopier nummer">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+                <div class="text-muted small mt-1">
+                  {{ t('Klikk nummeret for å ringe.') }}
+                </div>
                 {% else %}
-                  <div class="fw-semibold">{{ t('Ikke angitt') }}</div>
+                <div class="fw-semibold">{{ t('Ikke angitt') }}</div>
                 {% endif %}
               </div>
             </div>
@@ -111,9 +119,9 @@
                   {{ loan.pc.ok_number }} — {{ loan.pc.model_type }}
                 </div>
                 {% if loan.pc.notes %}
-                  <div class="text-muted small mt-1">
-                    <i class="fas fa-note-sticky me-1"></i> {{ loan.pc.notes }}
-                  </div>
+                <div class="text-muted small mt-1">
+                  <i class="fas fa-note-sticky me-1"></i> {{ loan.pc.notes }}
+                </div>
                 {% endif %}
               </div>
             </div>
@@ -163,9 +171,9 @@
                 <div class="fw-semibold">
                   <i class="fas fa-calendar-day me-1 text-muted"></i>
                   {% if loan.due_date %}
-                    {{ loan.due_date.strftime('%Y-%m-%d') }}
+                  {{ loan.due_date.strftime('%Y-%m-%d') }}
                   {% else %}
-                    {{ t('Ikke angitt') }}
+                  {{ t('Ikke angitt') }}
                   {% endif %}
                 </div>
               </div>
@@ -177,9 +185,9 @@
                 <div class="fw-semibold">
                   <i class="fas fa-calendar-check me-1 text-muted"></i>
                   {% if loan.return_date %}
-                    {{ loan.return_date_local.strftime('%Y-%m-%d %H:%M:%S') }}
+                  {{ loan.return_date_local.strftime('%Y-%m-%d %H:%M:%S') }}
                   {% else %}
-                    {{ t('Ikke returnert ennå') }}
+                  {{ t('Ikke returnert ennå') }}
                   {% endif %}
                 </div>
               </div>
