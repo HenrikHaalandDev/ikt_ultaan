@@ -208,7 +208,7 @@
                                         <td>{{ loan.borrower_name }}</td>
                                         <td>{{ loan.class_info }}</td>
                                         <td>{{ loan.borrower_phone or '' }}</td>
-                                        <td>{{ loan.item }}</td>
+                                        <td>{{ item_t(loan.item) }}</td>
                                         <td>
                                             {% if loan.pc_label %}
                                                 {{ loan.pc_label }}
@@ -326,7 +326,7 @@
                                         <td>{{ loan.borrower_name }}</td>
                                         <td>{{ loan.class_info }}</td>
                                         <td>{{ loan.borrower_phone or '' }}</td>
-                                        <td>{{ loan.item }}</td>
+                                        <td>{{ item_t(loan.item) }}</td>
                                         <td>
                                             {% if loan.pc_label %}
                                                 {{ loan.pc_label }}
