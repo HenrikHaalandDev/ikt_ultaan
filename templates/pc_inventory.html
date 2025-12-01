@@ -65,7 +65,7 @@
                 </td>
                 <td>
                     {% if active %}
-                    {{ active.borrower_name }} ({{ active.class_info or "—" }})
+                    {{ active.borrower_name }} ({{ class_t(active.class_info) or "—" }})
                     {% else %}
                     —
                     {% endif %}
