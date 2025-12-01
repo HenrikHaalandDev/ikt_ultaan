@@ -459,6 +459,18 @@ def dashboard():
     for loan in active_loans + returned_loans:
         loan.checkout_date_local = utc_to_local(loan.checkout_date)
         loan.return_date_local = utc_to_local(loan.return_date)
+
+        # ✅ Add a human-friendly PC label for templates/search
+        if loan.pc:
+            # Example: "OK12345 – Lenovo 14e"
+            loan.pc_label = f"{loan.pc.ok_number} – {loan.pc.model_type}"
+            loan.pc_ok = loan.pc.ok_number
+            loan.pc_model = loan.pc.model_type
+        else:
+            loan.pc_label = ""
+            loan.pc_ok = ""
+            loan.pc_model = ""
+
         loan.overdue = (
             not loan.is_returned
             and loan.due_date is not None
@@ -483,7 +495,6 @@ def dashboard():
         returned_today_count=returned_today_count,
         total_returned=total_returned
     )
-
 
 @app.route('/loan/new', methods=['GET', 'POST'])
 @login_required

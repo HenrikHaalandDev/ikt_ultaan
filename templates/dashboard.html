@@ -169,6 +169,8 @@
                                 <option value="due_desc">{{ t('Frist – senest først') }}</option>
                                 <option value="item_asc">{{ t('Utstyr – A → Å') }}</option>
                                 <option value="item_desc">{{ t('Utstyr – Å → A') }}</option>
+                                <option value="pc_asc">{{ t('PC – A → Å') }}</option>
+                                <option value="pc_desc">{{ t('PC – Å → A') }}</option>
                                 <option value="name_asc">{{ t('Navn – A → Å') }}</option>
                                 <option value="name_desc">{{ t('Navn – Å → A') }}</option>
                             </select>
@@ -186,6 +188,7 @@
                                         <th>{{ t('Klasse') }}</th>
                                         <th>{{ t('Telefon') }}</th>
                                         <th>{{ t('Utstyr') }}</th>
+                                        <th>{{ t('PC') }}</th>
                                         <th>{{ t('Utlånt') }}</th>
                                         <th>{{ t('Frist') }}</th>
                                         <th>{{ t('Handlinger') }}</th>
@@ -197,6 +200,7 @@
                                         data-name="{{ loan.borrower_name|lower }}"
                                         data-class="{{ loan.class_info|lower if loan.class_info }}"
                                         data-item="{{ loan.item|lower }}"
+                                        data-pc="{{ loan.pc_label|lower }}"
                                         data-owner="{{ loan.user_id }}"
                                         data-overdue="{{ '1' if loan.overdue else '0' }}"
                                         data-checkout="{{ loan.checkout_date_local.isoformat() }}"
@@ -205,6 +209,13 @@
                                         <td>{{ loan.class_info }}</td>
                                         <td>{{ loan.borrower_phone or '' }}</td>
                                         <td>{{ loan.item }}</td>
+                                        <td>
+                                            {% if loan.pc_label %}
+                                                {{ loan.pc_label }}
+                                            {% else %}
+                                                <span class="text-muted">{{ t('Ikke registrert') }}</span>
+                                            {% endif %}
+                                        </td>
                                         <td>{{ loan.checkout_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                         <td>
                                             {% if loan.due_date %}
@@ -275,6 +286,8 @@
                                 <option value="checkout_asc">{{ t('Utlånt – eldste først') }}</option>
                                 <option value="item_asc">{{ t('Utstyr – A → Å') }}</option>
                                 <option value="item_desc">{{ t('Utstyr – Å → A') }}</option>
+                                <option value="pc_asc">{{ t('PC – A → Å') }}</option>
+                                <option value="pc_desc">{{ t('PC – Å → A') }}</option>
                                 <option value="name_asc">{{ t('Navn – A → Å') }}</option>
                                 <option value="name_desc">{{ t('Navn – Å → A') }}</option>
                             </select>
@@ -292,6 +305,7 @@
                                         <th>{{ t('Klasse') }}</th>
                                         <th>{{ t('Telefon') }}</th>
                                         <th>{{ t('Utstyr') }}</th>
+                                        <th>{{ t('PC') }}</th>
                                         <th>{{ t('Utlånt') }}</th>
                                         <th>{{ t('Frist') }}</th>
                                         <th>{{ t('Returnert') }}</th>
@@ -304,6 +318,7 @@
                                         data-name="{{ loan.borrower_name|lower }}"
                                         data-class="{{ loan.class_info|lower if loan.class_info }}"
                                         data-item="{{ loan.item|lower }}"
+                                        data-pc="{{ loan.pc_label|lower }}"
                                         data-owner="{{ loan.user_id }}"
                                         data-checkout="{{ loan.checkout_date_local.isoformat() }}"
                                         data-return="{{ loan.return_date_local.isoformat() }}"
@@ -312,6 +327,13 @@
                                         <td>{{ loan.class_info }}</td>
                                         <td>{{ loan.borrower_phone or '' }}</td>
                                         <td>{{ loan.item }}</td>
+                                        <td>
+                                            {% if loan.pc_label %}
+                                                {{ loan.pc_label }}
+                                            {% else %}
+                                                <span class="text-muted">{{ t('Ikke registrert') }}</span>
+                                            {% endif %}
+                                        </td>
                                         <td>{{ loan.checkout_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                         <td>
                                             {% if loan.due_date %}
@@ -400,6 +422,10 @@
                             return compareText(dataA.item, dataB.item, true);
                         case 'item_desc':
                             return compareText(dataA.item, dataB.item, false);
+                        case 'pc_asc':
+                            return compareText(dataA.pc, dataB.pc, true);
+                        case 'pc_desc':
+                            return compareText(dataA.pc, dataB.pc, false);
                         case 'name_asc':
                             return compareText(dataA.name, dataB.name, true);
                         case 'name_desc':
@@ -444,13 +470,14 @@
                     const name = data.name || '';
                     const klass = data.class || '';
                     const item = data.item || '';
+                    const pc = data.pc || '';
                     const owner = data.owner || '';
                     const overdue = data.overdue === '1';
 
                     let visible = true;
 
                     if (query) {
-                        const haystack = (name + ' ' + klass + ' ' + item).toLowerCase();
+                        const haystack = (name + ' ' + klass + ' ' + item + ' ' + pc).toLowerCase();
                         visible = haystack.includes(query);
                     }
 
@@ -477,9 +504,10 @@
         // Initial filter
         filterTables();
     })();
-      // Refresh every 5 minutes
-  setInterval(() => {
-    location.reload();
-  }, 5 * 60 * 1000);
+
+    // Refresh every 5 minutes
+    setInterval(() => {
+        location.reload();
+    }, 5 * 60 * 1000);
 </script>
 {% endblock %}
