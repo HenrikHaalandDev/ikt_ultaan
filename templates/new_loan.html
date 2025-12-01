@@ -23,14 +23,32 @@
                         <div class="col-md-3">
                             <label for="borrower_phone" class="form-label">{{ t('Telefon') }}</label>
                             <input type="text" class="form-control" id="borrower_phone" name="borrower_phone"
-                                   placeholder="{{ t('f.eks. 999 99 999') }}">
+                                placeholder="{{ t('f.eks. 999 99 999') }}">
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="item" class="form-label">{{ t('Hva er utlånt *') }}</label>
-                        <input type="text" class="form-control" id="item" name="item" required>
+                        <label class="form-label">{{ t('Hva er utlånt *') }}</label>
+                        <!-- Free text (still allowed) -->
+                        <input type="text" class="form-control mb-2" name="item" id="itemInput"
+                            placeholder="Lader, PC-veske, etc.">
+
+                        <!-- Inventory dropdown (optional selection) -->
+                        {% if items %}
+                        <select class="form-select" name="item_id" id="itemSelect">
+                            <option value="">{{ t('-- Ingen valgt --') }}</option>
+                            {% for it in items %}
+                            <option value="{{ it.id }}">
+                                {{ it.name }} ({{ it.stock_available }}/{{ it.stock_total }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-muted">
+                            Velg fra lager hvis det er registrert der. Du kan også skrive fritt i feltet over.
+                        </div>
+                        {% endif %}
                     </div>
+
 
                     <div class="mb-3">
                         <label for="pc_id" class="form-label">{{ t('Velg PC (valgfritt)') }}</label>
@@ -46,7 +64,7 @@
                         <div class="col-md-4">
                             <label for="value" class="form-label">{{ t('Verdisak') }}</label>
                             <input type="text" class="form-control" id="value" name="value"
-                                   placeholder="{{ t('f.eks. 5000 kr') }}">
+                                placeholder="{{ t('f.eks. 5000 kr') }}">
                         </div>
                         <div class="col-md-4">
                             <label for="reason" class="form-label">{{ t('Hvorfor') }}</label>
@@ -70,4 +88,47 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const nameInput = document.getElementById('borrower_name');
+    const classInput = document.getElementById('class_info');
+    const phoneInput = document.getElementById('borrower_phone');
+    const itemInput = document.getElementById('itemInput');
+    const pcSelect = document.getElementById('pc_id');
+
+    if (!nameInput) return;
+
+    let lastQueried = '';
+
+    nameInput.addEventListener('blur', () => {
+        const name = (nameInput.value || '').trim();
+        if (!name || name === lastQueried) return;
+        lastQueried = name;
+
+        fetch(`/api/borrower/last?name=${encodeURIComponent(name)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data || !data.ok) return;
+                const info = data.data || {};
+
+                if (info.class_info && classInput && !classInput.value) {
+                    classInput.value = info.class_info;
+                }
+                if (info.borrower_phone && phoneInput && !phoneInput.value) {
+                    phoneInput.value = info.borrower_phone;
+                }
+                if (info.last_item && itemInput && !itemInput.value) {
+                    itemInput.value = info.last_item;
+                }
+                if (info.pc_id && pcSelect && !pcSelect.value) {
+                    pcSelect.value = String(info.pc_id);
+                }
+            })
+            .catch(() => { /* ignore */ });
+    });
+});
+</script>
+
+
 {% endblock %}

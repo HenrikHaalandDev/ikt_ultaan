@@ -6,6 +6,8 @@ from datetime import datetime
 import os
 from functools import wraps
 from sqlalchemy import func
+from sqlalchemy.orm import relationship
+
 
 # --- timezone (safe) ---
 try:
@@ -268,6 +270,11 @@ translations = {
         "Ingen utlån registrert ennå.": "No loans registered yet.",
         "Ingen klasser registrert på utlån ennå.": "No classes registered on loans yet.",
 
+
+        "Lavt lager på utstyr": "Low stock on items",
+        "Kun få igjen på lager:": "Only a few left in stock:",
+
+
         # Dynamic label value if ever needed
         "Ansatt": "Employee",
     }
@@ -345,6 +352,21 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     loans = db.relationship('Loan', backref='user', lazy=True)
 
+class Item(db.Model):
+    __tablename__ = "item"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+
+    # Total count you own
+    stock_total = db.Column(db.Integer, nullable=False, default=0)
+    # How many are currently available (not out on loan)
+    stock_available = db.Column(db.Integer, nullable=False, default=0)
+
+    def in_use(self):
+        return max(0, self.stock_total - self.stock_available)
+
+
 
 class PC(db.Model):
     __tablename__ = "pc"  # stabilt tabellnavn
@@ -379,6 +401,11 @@ class Loan(db.Model):
 
     pc_id = db.Column(db.Integer, db.ForeignKey('pc.id'), nullable=True)
     pc = db.relationship('PC', backref='loans')
+
+    # NEW: link to inventory item (charger, etc.)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=True)
+    item_obj = db.relationship('Item')
+
 
 
 # -------------------- HELPERS --------------------
@@ -435,6 +462,25 @@ def inject_admin_flag():
         "class_t": translate_class,  # 👈 use this in templates for loan.class_info
         "current_lang": session.get("lang", "no"),
     }
+
+
+def adjust_item_stock(item_id, delta: int):
+    """
+    Adjust `stock_available` on an Item.
+    delta = -1 when loaning out
+    delta = +1 when returning
+    """
+    if not item_id:
+        return
+
+    item = Item.query.get(item_id)
+    if not item:
+        return
+
+    new_available = (item.stock_available or 0) + int(delta)
+    # Never below 0, never above stock_total
+    new_available = max(0, min(new_available, item.stock_total or 0))
+    item.stock_available = new_available
 
 
 # -------------------- DB INIT + SEED --------------------
@@ -518,9 +564,7 @@ def dashboard():
         loan.checkout_date_local = utc_to_local(loan.checkout_date)
         loan.return_date_local = utc_to_local(loan.return_date)
 
-        # ✅ Add a human-friendly PC label for templates/search
         if loan.pc:
-            # Example: "OK12345 – Lenovo 14e"
             loan.pc_label = f"{loan.pc.ok_number} – {loan.pc.model_type}"
             loan.pc_ok = loan.pc.ok_number
             loan.pc_model = loan.pc.model_type
@@ -544,6 +588,12 @@ def dashboard():
     total_active = len(active_loans)
     total_returned = len(returned_loans)
 
+    # NEW: low stock items (<= 2 available, but > 0 total)
+    low_stock_items = Item.query.filter(
+        Item.stock_total > 0,
+        Item.stock_available <= 2
+    ).order_by(Item.name.asc()).all()
+
     return render_template(
         'dashboard.html',
         active_loans=active_loans,
@@ -551,41 +601,85 @@ def dashboard():
         total_active=total_active,
         overdue_count=overdue_count,
         returned_today_count=returned_today_count,
-        total_returned=total_returned
+        total_returned=total_returned,
+        low_stock_items=low_stock_items  # NEW
     )
+
+
+@app.route('/api/borrower/last')
+@login_required
+def api_borrower_last():
+    """
+    Return last loan data for a borrower name (exact match, case-insensitive).
+    Used to auto-fill class, phone, etc. in 'New loan' form.
+    """
+    name = request.args.get('name', '').strip()
+    if not name:
+        return {"ok": False, "error": "missing_name"}, 400
+
+    loan = (
+        Loan.query
+        .filter(func.lower(Loan.borrower_name) == func.lower(name))
+        .order_by(Loan.checkout_date.desc())
+        .first()
+    )
+
+    if not loan:
+        return {"ok": False, "error": "not_found"}, 404
+
+    return {
+        "ok": True,
+        "data": {
+            "borrower_phone": loan.borrower_phone or "",
+            "class_info": loan.class_info or "",
+            "last_item": loan.item or "",
+            "pc_id": loan.pc_id
+        }
+    }
 
 
 @app.route('/loan/new', methods=['GET', 'POST'])
 @login_required
 def new_loan():
     pcs = PC.query.order_by(PC.ok_number.asc()).all()
+    # NEW: load items (for dropdown)
+    items = Item.query.order_by(Item.name.asc()).all()
 
     if request.method == 'POST':
         borrower_name = request.form.get('borrower_name', '').strip()
         borrower_phone = request.form.get('borrower_phone', '').strip()
         class_info = request.form.get('class_info', '').strip()
-        item = request.form.get('item', '').strip()
+        item_text = request.form.get('item', '').strip()
         reason = request.form.get('reason', '').strip()
         value = request.form.get('value', '').strip()
         due_date_str = request.form.get('due_date')
         pc_id = request.form.get('pc_id')  # optional
 
+        # NEW: selected inventory item (optional)
+        item_id_str = request.form.get('item_id')
+        selected_item_id = int(item_id_str) if item_id_str else None
+
         due_date = None
         if due_date_str:
             try:
-                # Lagres som datetime, men kun dato brukes
                 due_date = datetime.strptime(due_date_str, "%Y-%m-%d")
             except ValueError:
                 flash('Ugyldig frist-dato. Bruk format ÅÅÅÅ-MM-DD.', 'danger')
                 return redirect(url_for('new_loan'))
 
-        if not borrower_name or not item:
+        if not borrower_name or not item_text:
             flash('Navn og utstyr er påkrevd.', 'danger')
             return redirect(url_for('new_loan'))
 
+        # If an Item is selected and item_text is empty, use item name
+        if selected_item_id and not item_text:
+            selected_item = Item.query.get(selected_item_id)
+            if selected_item:
+                item_text = selected_item.name
+
         selected_pc_id = int(pc_id) if pc_id else None
 
-        # Blokker nytt lån hvis PC allerede er utlånt
+        # Block new loan if PC already loaned out
         if selected_pc_id:
             already_out = Loan.query.filter_by(pc_id=selected_pc_id, is_returned=False).first()
             if already_out:
@@ -596,13 +690,18 @@ def new_loan():
             borrower_name=borrower_name,
             borrower_phone=borrower_phone,
             class_info=class_info,
-            item=item,
+            item=item_text,
             reason=reason,
             value=value,
             due_date=due_date,
             pc_id=selected_pc_id,
-            user_id=session['user_id']
+            user_id=session['user_id'],
+            item_id=selected_item_id  # NEW
         )
+
+        # NEW: adjust inventory – only for active loan
+        if selected_item_id:
+            adjust_item_stock(selected_item_id, -1)
 
         db.session.add(loan)
         db.session.commit()
@@ -610,7 +709,8 @@ def new_loan():
         flash('Utlån registrert.', 'success')
         return redirect(url_for('dashboard'))
 
-    return render_template('new_loan.html', pcs=pcs)
+    return render_template('new_loan.html', pcs=pcs, items=items)
+
 
 
 @app.route('/loan/<int:loan_id>')
@@ -654,22 +754,16 @@ def return_loan(loan_id):
 
     loan.is_returned = True
     loan.return_date = datetime.utcnow()
+
+    # NEW: item goes back in stock
+    if loan.item_id:
+        adjust_item_stock(loan.item_id, +1)
+
     db.session.commit()
 
     flash('Utlånet er markert som returnert.', 'success')
     return redirect(url_for('loan_detail', loan_id=loan_id))
 
-
-@app.route('/loan/<int:loan_id>/delete', methods=['POST'])
-@login_required
-@admin_required
-def delete_loan(loan_id):
-    loan = Loan.query.get_or_404(loan_id)
-    db.session.delete(loan)
-    db.session.commit()
-
-    flash('Utlånet ble slettet.', 'success')
-    return redirect(url_for('dashboard'))
 
 
 @app.route('/loan/<int:loan_id>/edit', methods=['GET', 'POST'])
@@ -677,6 +771,7 @@ def delete_loan(loan_id):
 def edit_loan(loan_id):
     loan = Loan.query.get_or_404(loan_id)
     pcs = PC.query.order_by(PC.ok_number.asc()).all()
+    items = Item.query.order_by(Item.name.asc()).all()  # NEW
 
     is_admin = session.get('is_admin', False)
     is_owner = loan.user_id == session.get('user_id')
@@ -689,17 +784,21 @@ def edit_loan(loan_id):
         borrower_name = request.form.get('borrower_name', '').strip()
         borrower_phone = request.form.get('borrower_phone', '').strip()
         class_info = request.form.get('class_info', '').strip()
-        item = request.form.get('item', '').strip()
+        item_text = request.form.get('item', '').strip()
         reason = request.form.get('reason', '').strip()
         value = request.form.get('value', '').strip()
         due_date_str = request.form.get('due_date')
         pc_id = request.form.get('pc_id')
 
-        if not borrower_name or not item:
+        # NEW: item from inventory
+        item_id_str = request.form.get('item_id')
+        new_item_id = int(item_id_str) if item_id_str else None
+        old_item_id = loan.item_id
+
+        if not borrower_name or not item_text:
             flash('Navn og utstyr er påkrevd.', 'danger')
             return redirect(url_for('edit_loan', loan_id=loan.id))
 
-        # Parse due date (same format as new_loan)
         due_date = None
         if due_date_str:
             try:
@@ -710,22 +809,39 @@ def edit_loan(loan_id):
 
         selected_pc_id = int(pc_id) if pc_id else None
 
-        # If changing PC, block if that PC is already out on another active loan
         if selected_pc_id and selected_pc_id != loan.pc_id:
             already_out = Loan.query.filter_by(pc_id=selected_pc_id, is_returned=False).first()
             if already_out:
                 flash("Denne PC-en er allerede utlånt.", "danger")
                 return redirect(url_for('edit_loan', loan_id=loan.id))
 
+        # If using inventory item and no text given, use item name
+        if new_item_id and not item_text:
+            selected_item = Item.query.get(new_item_id)
+            if selected_item:
+                item_text = selected_item.name
+
         # Update loan fields
         loan.borrower_name = borrower_name
         loan.borrower_phone = borrower_phone
         loan.class_info = class_info
-        loan.item = item
+        loan.item = item_text
         loan.reason = reason
         loan.value = value
         loan.due_date = due_date
         loan.pc_id = selected_pc_id
+
+        # NEW: adjust stock if inventory item changed
+        if not loan.is_returned:
+            if old_item_id != new_item_id:
+                # Old item becomes available again
+                if old_item_id:
+                    adjust_item_stock(old_item_id, +1)
+                # New item is now loaned out
+                if new_item_id:
+                    adjust_item_stock(new_item_id, -1)
+
+        loan.item_id = new_item_id
 
         db.session.commit()
         flash("Utlån oppdatert.", "success")
@@ -735,9 +851,27 @@ def edit_loan(loan_id):
         'loan_edit.html',
         loan=loan,
         pcs=pcs,
+        items=items,
         is_admin=is_admin,
         is_owner=is_owner
     )
+
+@app.route('/loan/<int:loan_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_loan(loan_id):
+    loan = Loan.query.get_or_404(loan_id)
+
+    # NEW: if loan is still active and has item, put it back in stock
+    if not loan.is_returned and loan.item_id:
+        adjust_item_stock(loan.item_id, +1)
+
+    db.session.delete(loan)
+    db.session.commit()
+
+    flash('Utlånet ble slettet.', 'success')
+    return redirect(url_for('dashboard'))
+
 
 
 # -------------------- PC INVENTORY --------------------

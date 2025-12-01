@@ -100,6 +100,23 @@
             </div>
         </div>
 
+        {% if low_stock_items %}
+        <!-- Low stock warning -->
+        <div class="alert alert-warning d-flex align-items-center gap-3 mb-3">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <strong>{{ t('Lavt lager på utstyr') }}</strong><br>
+                <span class="text-muted">{{ t('Kun få igjen på lager:') }}</span>
+                <ul class="mb-0">
+                    {% for item in low_stock_items %}
+                    <li>{{ item.name }} – {{ item.stock_available }}/{{ item.stock_total }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+
         <!-- Tabs -->
         <div class="loan-tabs-wrapper mb-3">
             <ul class="nav nav-pills mb-0" id="loanTabs" role="tablist">
