@@ -94,6 +94,9 @@ translations = {
         "Nåværende passord er feil.": "Current password is incorrect.",
         "Nytt passord og bekreftelse matcher ikke.": "New password and confirmation do not match.",
         "Profil oppdatert.": "Profile updated.",
+        "Utlån oppdatert.": "Loan updated.",
+        "PC slettet fra lager.": "PC deleted from inventory.",
+        "Noe gikk galt ved sletting av PC.": "Something went wrong while deleting the PC.",
 
         # Dashboard / oversikt
         "Utlån – oversikt": "Loans – overview",
@@ -138,18 +141,20 @@ translations = {
         "Frist": "Due date",
         "Handlinger": "Actions",
 
-        # Loan detail
+        # Loan detail / edit
         "Utlån detaljer": "Loan details",
         "Returnert": "Returned",
         "Aktiv": "Active",
         "Tilbake": "Back",
         "Rediger": "Edit",
+        "Rediger utlån": "Edit loan",
+        "Oppdater informasjonen og lagre når du er ferdig": "Update the information and save when you are finished.",
+        "Låntaker": "Borrower",
         "Marker som returnert": "Mark as returned",
         "Slett utlån": "Delete loan",
         "Er du sikker på at du vil slette dette utlånet? Denne handlingen kan ikke angres.": "Are you sure you want to delete this loan? This action cannot be undone.",
         "Navn på elev/ansatt": "Name of student/employee",
         "Ikke angitt": "Not specified",
-        "Telefon": "Phone",
         "Klikk nummeret for å ringe.": "Click the number to call.",
         "PC (fra oversikt)": "PC (from inventory)",
         "Ikke registrert": "Not registered",
@@ -163,26 +168,33 @@ translations = {
         "Registrert av:": "Registered by:",
         "Telefonnummer kopiert til utklippstavlen.": "Phone number copied to clipboard.",
         "Kunne ikke kopiere telefonnummer.": "Could not copy phone number.",
+        "Valgfritt, men nyttig ved oppfølging.": "Optional, but useful for follow-up.",
 
-        # New loan
+        # New loan / PC search
         "Nytt utlån": "New loan",
         "Navn på elev/ansatt *": "Name of student/employee *",
         "Klasse": "Class",
-        "Telefon": "Phone",
         "f.eks. 999 99 999": "e.g. 999 99 999",
         "Hva er utlånt *": "What is loaned out *",
         "Velg PC (valgfritt)": "Select PC (optional)",
         "-- Ingen valgt --": "-- None selected --",
-        "Verdisak": "Value item",
         "f.eks. 5000 kr": "e.g. 5000 NOK",
-        "Hvorfor": "Reason",
         "Frist for innlevering": "Return deadline",
         "Avbryt": "Cancel",
         "Registrer utlån": "Register loan",
         "* Obligatoriske felt": "* Required fields",
 
+        "Søk etter OK-nummer eller modell...": "Search by OK number or model...",
+        "Start å skrive for å søke i PC-lageret. Når du velger et treff, kobles riktig PC til utlånet.": "Start typing to search the PC inventory. When you choose a result, the correct PC is linked to the loan.",
+        "Start å skrive for å søke. PC-en blir koblet til utlånet når du velger et treff.": "Start typing to search. The PC will be linked to the loan when you choose a result.",
+        "La feltet stå tomt for å fjerne PC-koblingen.": "Leave the field empty to remove the PC link.",
+        "Fant ingen PC som matcher det du skrev inn. Velg en PC fra listen, eller registrer den som ny.": "No PC was found matching what you entered. Select a PC from the list, or register it as a new one.",
+        "Ny PC (ikke i PC-oversikten)": "New PC (not in the PC inventory)",
+        "OK-nummer / serienummer": "OK number / serial number",
+        "Hvis PC-en ikke finnes i lageret, kan du skrive inn OK-nummer og modell her. Den blir automatisk lagt til i PC-oversikten og koblet til utlånet.":
+            "If the PC is not in the inventory, you can enter the OK number and model here. It will be added to the PC inventory and linked to the loan automatically.",
+
         # PC inventory
-        "PC-oversikt": "PC inventory",
         "Legg til PC": "Add PC",
         "Søk på OK-nummer/serienr eller modell...": "Search by OK number/serial or model...",
         "Sorter: Modell A → Z": "Sort: Model A → Z",
@@ -218,8 +230,6 @@ translations = {
         "Legg til bruker": "Add user",
         "Brukeradministrasjon": "User administration",
         "ID": "ID",
-        "Brukernavn": "Username",
-        "Admin": "Admin",
         "Handlinger": "Actions",
         "Ja": "Yes",
         "Nei": "No",
@@ -230,7 +240,6 @@ translations = {
         "Ingen brukere funnet.": "No users found.",
 
         # Profil
-        "Min profil": "My profile",
         "Brukernavn *": "Username *",
         "Nåværende passord *": "Current password *",
         "Du må oppgi ditt nåværende passord for å bekrefte endringer.": "You must enter your current password to confirm changes.",
@@ -238,7 +247,6 @@ translations = {
         "La feltet stå tomt hvis du ikke vil endre passord.": "Leave this field empty if you do not want to change your password.",
         "Bekreft nytt passord": "Confirm new password",
         "Brukertype:": "User type:",
-        "Administrator": "Administrator",
         "Standard bruker": "Standard user",
         "Lagre endringer": "Save changes",
 
@@ -250,7 +258,6 @@ translations = {
         "Aktive": "Active",
         "Forfalte": "Overdue",
         "Frist er passert": "Due date passed",
-        "Returnerte": "Returned",
         "Utlån som er avsluttet": "Loans that are finished",
         "Brukere og utstyr": "Borrowers and equipment",
         "Unike låntakere": "Unique borrowers",
@@ -262,9 +269,7 @@ translations = {
         "Relativt": "Relative",
         "Ingen data tilgjengelig ennå.": "No data available yet.",
         "Mest utlånte ting": "Most loaned items",
-        "Utstyr": "Item",
         "Klasser med flest utlån": "Classes with most loans",
-        "Klasse": "Class",
         "Ingen utlån registrert ennå.": "No loans registered yet.",
         "Ingen klasser registrert på utlån ennå.": "No classes registered on loans yet.",
 
@@ -334,6 +339,7 @@ def translate_class(text: str) -> str:
     if lang == "en":
         return class_translations_en.get(text, text)
     return text
+
 
 
 # -------------------- MODELS --------------------
@@ -571,6 +577,8 @@ def new_loan():
 
         # Fra søk / datalist (eksisterende PC)
         pc_id_raw = request.form.get('pc_id')
+        # Det brukeren faktisk skrev i søkefeltet
+        pc_search_raw = request.form.get('pc_search_raw', '').strip()
 
         # Fra "ny PC"-feltene
         pc_ok_number = request.form.get('pc_ok_number', '').strip()
@@ -583,17 +591,18 @@ def new_loan():
                 due_date = datetime.strptime(due_date_str, "%Y-%m-%d")
             except ValueError:
                 flash('Ugyldig frist-dato. Bruk format ÅÅÅÅ-MM-DD.', 'danger')
-                return redirect(url_for('new_loan'))
+                # Vis samme skjema igjen med dataen bevart
+                return render_template('new_loan.html', pcs=pcs, form=request.form)
 
         # --- Valider påkrevde felt ---
         if not borrower_name or not item:
             flash('Navn og utstyr er påkrevd.', 'danger')
-            return redirect(url_for('new_loan'))
+            return render_template('new_loan.html', pcs=pcs, form=request.form)
 
         # --- Finn / lag PC ---
         selected_pc_id = None
 
-        # 1) Hvis bruker har valgt en eksisterende PC fra søkefeltet
+        # 1) Hvis bruker har valgt en eksisterende PC fra søkefeltet (pc_id_hidden)
         if pc_id_raw:
             try:
                 selected_pc_id = int(pc_id_raw)
@@ -613,14 +622,23 @@ def new_loan():
                 db.session.flush()  # få new_pc.id uten å commite enda
                 selected_pc_id = new_pc.id
 
+        # 2b) Bruker har skrevet noe i søkefeltet, men vi fant ingen PC og ingen ny PC er fylt inn
+        if not selected_pc_id and pc_search_raw and not (pc_ok_number and pc_model_type):
+            flash(
+                "Fant ingen PC som matcher det du skrev inn. "
+                "Velg en PC fra listen, eller registrer den som ny.",
+                "danger"
+            )
+            db.session.rollback()
+            return render_template('new_loan.html', pcs=pcs, form=request.form)
+
         # 3) Blokker lån hvis valgt PC allerede er utlånt
         if selected_pc_id:
             already_out = Loan.query.filter_by(pc_id=selected_pc_id, is_returned=False).first()
             if already_out:
                 flash("Denne PC-en er allerede utlånt.", "danger")
-                # Hvis vi nettopp opprettet en PC, ruller vi tilbake den også
                 db.session.rollback()
-                return redirect(url_for('new_loan'))
+                return render_template('new_loan.html', pcs=pcs, form=request.form)
 
         # --- Lag selve utlånet ---
         loan = Loan(
@@ -641,7 +659,8 @@ def new_loan():
         flash('Utlån registrert.', 'success')
         return redirect(url_for('dashboard'))
 
-    return render_template('new_loan.html', pcs=pcs)
+    # GET: tomt skjema → form = {}
+    return render_template('new_loan.html', pcs=pcs, form={})
 
 
 

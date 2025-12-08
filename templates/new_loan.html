@@ -13,23 +13,25 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="borrower_name" class="form-label">{{ t('Navn på elev/ansatt *') }}</label>
-                            <input type="text" class="form-control" id="borrower_name" name="borrower_name" required>
+                            <label class="form-label">{{ t('Navn på elev/ansatt *') }}</label>
+                            <input type="text" class="form-control" name="borrower_name"
+                                value="{{ form.get('borrower_name', '') }}" required>
                         </div>
                         <div class="col-md-3">
-                            <label for="class_info" class="form-label">{{ t('Klasse') }}</label>
-                            <input type="text" class="form-control" id="class_info" name="class_info">
+                            <label class="form-label">{{ t('Klasse') }}</label>
+                            <input type="text" class="form-control" name="class_info"
+                                value="{{ form.get('class_info', '') }}">
                         </div>
                         <div class="col-md-3">
-                            <label for="borrower_phone" class="form-label">{{ t('Telefon') }}</label>
-                            <input type="text" class="form-control" id="borrower_phone" name="borrower_phone"
-                                placeholder="{{ t('f.eks. 999 99 999') }}">
+                            <label class="form-label">{{ t('Telefon') }}</label>
+                            <input type="text" class="form-control" name="borrower_phone"
+                                value="{{ form.get('borrower_phone', '') }}" placeholder="{{ t('f.eks. 999 99 999') }}">
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="item" class="form-label">{{ t('Hva er utlånt *') }}</label>
-                        <input type="text" class="form-control" id="item" name="item" required>
+                        <label class="form-label">{{ t('Hva er utlånt *') }}</label>
+                        <input type="text" class="form-control" name="item" value="{{ form.get('item', '') }}" required>
                     </div>
 
                     <!-- 1) Søk i eksisterende PC-lager -->
@@ -38,8 +40,9 @@
                             {{ t('Velg PC (valgfritt)') }}
                         </label>
 
-                        <input type="text" class="form-control mb-2" id="pc_search_input" list="pc_list"
-                            placeholder="{{ t('Søk etter OK-nummer eller modell...') }}">
+                        <input type="text" class="form-control mb-2" id="pc_search_input" name="pc_search_raw"
+                            list="pc_list" placeholder="{{ t('Søk etter OK-nummer eller modell...') }}"
+                            value="{{ form.get('pc_search_raw', '') }}">
 
                         <datalist id="pc_list">
                             {% for pc in pcs %}
@@ -49,14 +52,13 @@
                             {% endfor %}
                         </datalist>
 
-
                         <!-- Skjult felt som faktisk sendes til serveren -->
-                        <input type="hidden" name="pc_id" id="pc_id_hidden">
+                        <input type="hidden" name="pc_id" id="pc_id_hidden" value="{{ form.get('pc_id', '') }}">
 
                         <div class="form-text">
-                            {{ t('Start å skrive for å søke i PC-lageret. Når du velger et treff, kobles riktig PC til
-                            utlånet.') }}
+                            {{ t('Start å skrive for å søke i PC-lageret. Når du velger et treff, kobles riktig PC til utlånet.') }}
                         </div>
+
                     </div>
 
                     <hr>
@@ -70,33 +72,35 @@
                         <div class="row g-2">
                             <div class="col-md-5">
                                 <input type="text" class="form-control" id="pc_ok_number" name="pc_ok_number"
+                                    value="{{ form.get('pc_ok_number', '') }}"
                                     placeholder="{{ t('OK-nummer / serienummer') }}">
                             </div>
                             <div class="col-md-7">
                                 <input type="text" class="form-control" id="pc_model_type" name="pc_model_type"
-                                    placeholder="{{ t('Modelltype') }}">
+                                    value="{{ form.get('pc_model_type', '') }}" placeholder="{{ t('Modelltype') }}">
                             </div>
                         </div>
 
                         <div class="form-text">
-                            {{ t('Hvis PC-en ikke finnes i lageret, kan du skrive inn OK-nummer og modell her. Den blir
-                            automatisk lagt til i PC-oversikten og koblet til utlånet.') }}
+                            {{ t('Hvis PC-en ikke finnes i lageret, kan du skrive inn OK-nummer og modell her. Den blir automatisk lagt til i PC-oversikten og koblet til utlånet.') }}
                         </div>
+
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <label for="value" class="form-label">{{ t('Verdisak') }}</label>
-                            <input type="text" class="form-control" id="value" name="value"
+                            <label class="form-label">{{ t('Verdisak') }}</label>
+                            <input type="text" class="form-control" name="value" value="{{ form.get('value', '') }}"
                                 placeholder="{{ t('f.eks. 5000 kr') }}">
                         </div>
                         <div class="col-md-4">
-                            <label for="reason" class="form-label">{{ t('Hvorfor') }}</label>
-                            <input type="text" class="form-control" id="reason" name="reason">
+                            <label class="form-label">{{ t('Hvorfor') }}</label>
+                            <input type="text" class="form-control" name="reason" value="{{ form.get('reason', '') }}">
                         </div>
                         <div class="col-md-4">
-                            <label for="due_date" class="form-label">{{ t('Frist for innlevering') }}</label>
-                            <input type="date" class="form-control" id="due_date" name="due_date">
+                            <label class="form-label">{{ t('Frist for innlevering') }}</label>
+                            <input type="date" class="form-control" name="due_date"
+                                value="{{ form.get('due_date', '') }}">
                         </div>
                     </div>
 

@@ -10,14 +10,14 @@
         <div class="card-header bg-primary text-white p-3 border-0 rounded-top">
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
             <div>
-              <h4 class="mb-0">Rediger utlån</h4>
+              <h4 class="mb-0">{{ t('Rediger utlån') }}</h4>
               <div class="small text-white-50">
-                Oppdater informasjonen og lagre når du er ferdig
+                {{ t('Oppdater informasjonen og lagre når du er ferdig') }}
               </div>
             </div>
 
             <a href="{{ url_for('loan_detail', loan_id=loan.id) }}" class="btn btn-light btn-sm">
-              <i class="fas fa-arrow-left me-1"></i> Tilbake
+              <i class="fas fa-arrow-left me-1"></i> {{ t('Tilbake') }}
             </a>
           </div>
         </div>
@@ -29,24 +29,24 @@
             <!-- Borrower section -->
             <div class="p-3 bg-light rounded-3 mb-3">
               <div class="fw-semibold mb-2">
-                <i class="fas fa-user me-2 text-muted"></i> Låntaker
+                <i class="fas fa-user me-2 text-muted"></i> {{ t('Låntaker') }}
               </div>
 
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label small text-muted">Navn på elev/ansatt</label>
+                  <label class="form-label small text-muted">{{ t('Navn på elev/ansatt') }}</label>
                   <input class="form-control" name="borrower_name" value="{{ loan.borrower_name }}" required>
                 </div>
 
                 <div class="col-md-6">
-                  <label class="form-label small text-muted">Klasse</label>
+                  <label class="form-label small text-muted">{{ t('Klasse') }}</label>
                   <input class="form-control" name="class_info" value="{{ loan.class_info or '' }}">
                 </div>
 
                 <div class="col-md-6">
-                  <label class="form-label small text-muted">Telefon</label>
+                  <label class="form-label small text-muted">{{ t('Telefon') }}</label>
                   <input class="form-control" name="borrower_phone" value="{{ loan.borrower_phone or '' }}">
-                  <div class="form-text">Valgfritt, men nyttig ved oppfølging.</div>
+                  <div class="form-text">{{ t('Valgfritt, men nyttig ved oppfølging.') }}</div>
                 </div>
               </div>
             </div>
@@ -54,23 +54,19 @@
             <!-- Equipment section -->
             <div class="p-3 bg-light rounded-3 mb-3">
               <div class="fw-semibold mb-2">
-                <i class="fas fa-laptop me-2 text-muted"></i> Utstyr
+                <i class="fas fa-laptop me-2 text-muted"></i> {{ t('Utstyr') }}
               </div>
 
               <div class="row g-3">
                 <div class="col-12">
                   <label class="form-label small text-muted" for="pc_search_input">
-                    PC (fra oversikt)
+                    {{ t('PC (fra oversikt)') }}
                   </label>
 
-                  <!-- Søkefelt + datalist for PC -->
-                  {%- set current_pc = pcs
-                  |selectattr('id', 'equalto', loan.pc_id)
-                  |list
-                  |first
-                  -%}
+                  {%- set current_pc = pcs |selectattr('id','equalto',loan.pc_id)|list|first -%}
+
                   <input type="text" class="form-control mb-2" id="pc_search_input" list="pc_list"
-                    placeholder="Søk etter OK-nummer eller modell..."
+                    placeholder="{{ t('Søk etter OK-nummer eller modell...') }}"
                     value="{% if current_pc %}{{ current_pc.ok_number }} — {{ current_pc.model_type }}{% endif %}">
 
                   <datalist id="pc_list">
@@ -81,28 +77,26 @@
                     {% endfor %}
                   </datalist>
 
-
-                  <!-- Skjult felt som faktisk sendes til serveren -->
                   <input type="hidden" name="pc_id" id="pc_id_hidden" value="{{ loan.pc_id or '' }}">
 
                   <div class="form-text">
-                    Start å skrive for å søke. PC-en blir koblet til utlånet når du velger et treff.
-                    La feltet stå tomt for å fjerne PC-koblingen.
+                    {{ t('Start å skrive for å søke. PC-en blir koblet til utlånet når du velger et treff.') }}
+                    {{ t('La feltet stå tomt for å fjerne PC-koblingen.') }}
                   </div>
                 </div>
 
                 <div class="col-12">
-                  <label class="form-label small text-muted">Hva er utlånt</label>
+                  <label class="form-label small text-muted">{{ t('Hva er utlånt') }}</label>
                   <input class="form-control" name="item" value="{{ loan.item }}" required>
                 </div>
 
                 <div class="col-md-6">
-                  <label class="form-label small text-muted">Verdisak</label>
+                  <label class="form-label small text-muted">{{ t('Verdisak') }}</label>
                   <input class="form-control" name="value" value="{{ loan.value or '' }}">
                 </div>
 
                 <div class="col-md-6">
-                  <label class="form-label small text-muted">Hvorfor</label>
+                  <label class="form-label small text-muted">{{ t('Hvorfor') }}</label>
                   <input class="form-control" name="reason" value="{{ loan.reason or '' }}">
                 </div>
               </div>
@@ -111,12 +105,12 @@
             <!-- Dates section -->
             <div class="p-3 bg-light rounded-3 mb-4">
               <div class="fw-semibold mb-2">
-                <i class="fas fa-calendar-alt me-2 text-muted"></i> Frist
+                <i class="fas fa-calendar-alt me-2 text-muted"></i> {{ t('Frist') }}
               </div>
 
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label small text-muted">Frist for innlevering</label>
+                  <label class="form-label small text-muted">{{ t('Frist for innlevering') }}</label>
                   <input type="date" class="form-control" name="due_date"
                     value="{% if loan.due_date %}{{ loan.due_date.strftime('%Y-%m-%d') }}{% endif %}">
                 </div>
@@ -126,10 +120,10 @@
             <!-- Actions -->
             <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
               <a href="{{ url_for('loan_detail', loan_id=loan.id) }}" class="btn btn-outline-secondary">
-                Avbryt
+                {{ t('Avbryt') }}
               </a>
               <button class="btn btn-success">
-                <i class="fas fa-save me-1"></i> Lagre endringer
+                <i class="fas fa-save me-1"></i> {{ t('Lagre endringer') }}
               </button>
             </div>
 
@@ -141,7 +135,7 @@
   </div>
 </div>
 
-<!-- Liten JS-snutt for å koble valgt tekst til riktig pc_id -->
+<!-- JS -->
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const displayInput = document.getElementById('pc_search_input');
@@ -153,16 +147,10 @@
     displayInput.addEventListener('input', function () {
       const value = this.value;
       let matchedId = '';
-      const options = datalist.querySelectorAll('option');
-
-      options.forEach(function (opt) {
-        if (opt.value === value) {
-          matchedId = opt.getAttribute('data-id') || '';
-        }
+      datalist.querySelectorAll('option').forEach(function (opt) {
+        if (opt.value === value) matchedId = opt.getAttribute('data-id');
       });
-
-      // Hvis ingen eksakt match, tømmer vi pc_id
-      hiddenInput.value = matchedId;
+      hiddenInput.value = matchedId || '';
     });
   });
 </script>
