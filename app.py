@@ -568,30 +568,61 @@ def new_loan():
         reason = request.form.get('reason', '').strip()
         value = request.form.get('value', '').strip()
         due_date_str = request.form.get('due_date')
-        pc_id = request.form.get('pc_id')  # optional
 
+        # Fra søk / datalist (eksisterende PC)
+        pc_id_raw = request.form.get('pc_id')
+
+        # Fra "ny PC"-feltene
+        pc_ok_number = request.form.get('pc_ok_number', '').strip()
+        pc_model_type = request.form.get('pc_model_type', '').strip()
+
+        # --- Frist ---
         due_date = None
         if due_date_str:
             try:
-                # Lagres som datetime, men kun dato brukes
                 due_date = datetime.strptime(due_date_str, "%Y-%m-%d")
             except ValueError:
                 flash('Ugyldig frist-dato. Bruk format ÅÅÅÅ-MM-DD.', 'danger')
                 return redirect(url_for('new_loan'))
 
+        # --- Valider påkrevde felt ---
         if not borrower_name or not item:
             flash('Navn og utstyr er påkrevd.', 'danger')
             return redirect(url_for('new_loan'))
 
-        selected_pc_id = int(pc_id) if pc_id else None
+        # --- Finn / lag PC ---
+        selected_pc_id = None
 
-        # Blokker nytt lån hvis PC allerede er utlånt
+        # 1) Hvis bruker har valgt en eksisterende PC fra søkefeltet
+        if pc_id_raw:
+            try:
+                selected_pc_id = int(pc_id_raw)
+            except ValueError:
+                selected_pc_id = None
+
+        # 2) Hvis ingen eksisterende PC er valgt, men bruker har fylt ut ny PC
+        if not selected_pc_id and pc_ok_number and pc_model_type:
+            # Sjekk først om den finnes fra før (samme OK-nummer)
+            existing_pc = PC.query.filter_by(ok_number=pc_ok_number).first()
+            if existing_pc:
+                selected_pc_id = existing_pc.id
+            else:
+                # Lag ny PC i lageret
+                new_pc = PC(ok_number=pc_ok_number, model_type=pc_model_type, notes=None)
+                db.session.add(new_pc)
+                db.session.flush()  # få new_pc.id uten å commite enda
+                selected_pc_id = new_pc.id
+
+        # 3) Blokker lån hvis valgt PC allerede er utlånt
         if selected_pc_id:
             already_out = Loan.query.filter_by(pc_id=selected_pc_id, is_returned=False).first()
             if already_out:
                 flash("Denne PC-en er allerede utlånt.", "danger")
+                # Hvis vi nettopp opprettet en PC, ruller vi tilbake den også
+                db.session.rollback()
                 return redirect(url_for('new_loan'))
 
+        # --- Lag selve utlånet ---
         loan = Loan(
             borrower_name=borrower_name,
             borrower_phone=borrower_phone,
@@ -600,7 +631,7 @@ def new_loan():
             reason=reason,
             value=value,
             due_date=due_date,
-            pc_id=selected_pc_id,
+            pc_id=selected_pc_id,   # kan være None hvis ingen PC er valgt
             user_id=session['user_id']
         )
 
@@ -611,6 +642,7 @@ def new_loan():
         return redirect(url_for('dashboard'))
 
     return render_template('new_loan.html', pcs=pcs)
+
 
 
 @app.route('/loan/<int:loan_id>')

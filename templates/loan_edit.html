@@ -35,20 +35,17 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label small text-muted">Navn på elev/ansatt</label>
-                  <input class="form-control" name="borrower_name"
-                         value="{{ loan.borrower_name }}" required>
+                  <input class="form-control" name="borrower_name" value="{{ loan.borrower_name }}" required>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label small text-muted">Klasse</label>
-                  <input class="form-control" name="class_info"
-                         value="{{ loan.class_info or '' }}">
+                  <input class="form-control" name="class_info" value="{{ loan.class_info or '' }}">
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label small text-muted">Telefon</label>
-                  <input class="form-control" name="borrower_phone"
-                         value="{{ loan.borrower_phone or '' }}">
+                  <input class="form-control" name="borrower_phone" value="{{ loan.borrower_phone or '' }}">
                   <div class="form-text">Valgfritt, men nyttig ved oppfølging.</div>
                 </div>
               </div>
@@ -68,35 +65,25 @@
 
                   <!-- Søkefelt + datalist for PC -->
                   {%- set current_pc = pcs
-                      |selectattr('id', 'equalto', loan.pc_id)
-                      |list
-                      |first
+                  |selectattr('id', 'equalto', loan.pc_id)
+                  |list
+                  |first
                   -%}
-                  <input
-                      type="text"
-                      class="form-control mb-2"
-                      id="pc_search_input"
-                      list="pc_list"
-                      placeholder="Søk etter OK-nummer eller modell..."
-                      value="{% if current_pc %}{{ current_pc.ok_number }} — {{ current_pc.model_type }}{% endif %}"
-                  >
+                  <input type="text" class="form-control mb-2" id="pc_search_input" list="pc_list"
+                    placeholder="Søk etter OK-nummer eller modell..."
+                    value="{% if current_pc %}{{ current_pc.ok_number }} — {{ current_pc.model_type }}{% endif %}">
 
                   <datalist id="pc_list">
                     {% for pc in pcs %}
-                      <option
-                          data-id="{{ pc.id }}"
-                          value="{{ pc.ok_number }} — {{ pc.model_type }}">
-                      </option>
+                    <option data-id="{{ pc.id }}" value="{{ pc.ok_number }}"
+                      label="{{ pc.ok_number }} — {{ pc.model_type }}">
+                    </option>
                     {% endfor %}
                   </datalist>
 
+
                   <!-- Skjult felt som faktisk sendes til serveren -->
-                  <input
-                      type="hidden"
-                      name="pc_id"
-                      id="pc_id_hidden"
-                      value="{{ loan.pc_id or '' }}"
-                  >
+                  <input type="hidden" name="pc_id" id="pc_id_hidden" value="{{ loan.pc_id or '' }}">
 
                   <div class="form-text">
                     Start å skrive for å søke. PC-en blir koblet til utlånet når du velger et treff.
@@ -106,20 +93,17 @@
 
                 <div class="col-12">
                   <label class="form-label small text-muted">Hva er utlånt</label>
-                  <input class="form-control" name="item"
-                         value="{{ loan.item }}" required>
+                  <input class="form-control" name="item" value="{{ loan.item }}" required>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label small text-muted">Verdisak</label>
-                  <input class="form-control" name="value"
-                         value="{{ loan.value or '' }}">
+                  <input class="form-control" name="value" value="{{ loan.value or '' }}">
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label small text-muted">Hvorfor</label>
-                  <input class="form-control" name="reason"
-                         value="{{ loan.reason or '' }}">
+                  <input class="form-control" name="reason" value="{{ loan.reason or '' }}">
                 </div>
               </div>
             </div>
@@ -134,15 +118,14 @@
                 <div class="col-md-6">
                   <label class="form-label small text-muted">Frist for innlevering</label>
                   <input type="date" class="form-control" name="due_date"
-                         value="{% if loan.due_date %}{{ loan.due_date.strftime('%Y-%m-%d') }}{% endif %}">
+                    value="{% if loan.due_date %}{{ loan.due_date.strftime('%Y-%m-%d') }}{% endif %}">
                 </div>
               </div>
             </div>
 
             <!-- Actions -->
             <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
-              <a href="{{ url_for('loan_detail', loan_id=loan.id) }}"
-                 class="btn btn-outline-secondary">
+              <a href="{{ url_for('loan_detail', loan_id=loan.id) }}" class="btn btn-outline-secondary">
                 Avbryt
               </a>
               <button class="btn btn-success">
@@ -160,27 +143,27 @@
 
 <!-- Liten JS-snutt for å koble valgt tekst til riktig pc_id -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const displayInput = document.getElementById('pc_search_input');
-  const hiddenInput = document.getElementById('pc_id_hidden');
-  const datalist = document.getElementById('pc_list');
+  document.addEventListener('DOMContentLoaded', function () {
+    const displayInput = document.getElementById('pc_search_input');
+    const hiddenInput = document.getElementById('pc_id_hidden');
+    const datalist = document.getElementById('pc_list');
 
-  if (!displayInput || !hiddenInput || !datalist) return;
+    if (!displayInput || !hiddenInput || !datalist) return;
 
-  displayInput.addEventListener('input', function () {
-    const value = this.value;
-    let matchedId = '';
-    const options = datalist.querySelectorAll('option');
+    displayInput.addEventListener('input', function () {
+      const value = this.value;
+      let matchedId = '';
+      const options = datalist.querySelectorAll('option');
 
-    options.forEach(function (opt) {
-      if (opt.value === value) {
-        matchedId = opt.getAttribute('data-id') || '';
-      }
+      options.forEach(function (opt) {
+        if (opt.value === value) {
+          matchedId = opt.getAttribute('data-id') || '';
+        }
+      });
+
+      // Hvis ingen eksakt match, tømmer vi pc_id
+      hiddenInput.value = matchedId;
     });
-
-    // Hvis ingen eksakt match, tømmer vi pc_id
-    hiddenInput.value = matchedId;
   });
-});
 </script>
 {% endblock %}

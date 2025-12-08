@@ -23,7 +23,7 @@
                         <div class="col-md-3">
                             <label for="borrower_phone" class="form-label">{{ t('Telefon') }}</label>
                             <input type="text" class="form-control" id="borrower_phone" name="borrower_phone"
-                                   placeholder="{{ t('f.eks. 999 99 999') }}">
+                                placeholder="{{ t('f.eks. 999 99 999') }}">
                         </div>
                     </div>
 
@@ -32,32 +32,55 @@
                         <input type="text" class="form-control" id="item" name="item" required>
                     </div>
 
-                    <!-- NY: Søkefelt for PC -->
+                    <!-- 1) Søk i eksisterende PC-lager -->
                     <div class="mb-3">
-                        <label for="pc_search_input" class="form-label">{{ t('Velg PC (valgfritt)') }}</label>
+                        <label for="pc_search_input" class="form-label">
+                            {{ t('Velg PC (valgfritt)') }}
+                        </label>
 
-                        <input
-                            type="text"
-                            class="form-control mb-2"
-                            id="pc_search_input"
-                            list="pc_list"
-                            placeholder="{{ t('Søk etter OK-nummer eller modell...') }}"
-                        >
+                        <input type="text" class="form-control mb-2" id="pc_search_input" list="pc_list"
+                            placeholder="{{ t('Søk etter OK-nummer eller modell...') }}">
 
                         <datalist id="pc_list">
                             {% for pc in pcs %}
-                            <option
-                                data-id="{{ pc.id }}"
-                                value="{{ pc.ok_number }} — {{ pc.model_type }}">
+                            <option data-id="{{ pc.id }}" value="{{ pc.ok_number }}"
+                                label="{{ pc.ok_number }} — {{ pc.model_type }}">
                             </option>
                             {% endfor %}
                         </datalist>
+
 
                         <!-- Skjult felt som faktisk sendes til serveren -->
                         <input type="hidden" name="pc_id" id="pc_id_hidden">
 
                         <div class="form-text">
-                            {{ t('Start å skrive for å søke. Når du velger et treff, kobles riktig PC til utlånet.') }}
+                            {{ t('Start å skrive for å søke i PC-lageret. Når du velger et treff, kobles riktig PC til
+                            utlånet.') }}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 2) Registrer helt ny PC direkte fra utlån -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ t('Ny PC (ikke i PC-oversikten)') }}
+                        </label>
+
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" id="pc_ok_number" name="pc_ok_number"
+                                    placeholder="{{ t('OK-nummer / serienummer') }}">
+                            </div>
+                            <div class="col-md-7">
+                                <input type="text" class="form-control" id="pc_model_type" name="pc_model_type"
+                                    placeholder="{{ t('Modelltype') }}">
+                            </div>
+                        </div>
+
+                        <div class="form-text">
+                            {{ t('Hvis PC-en ikke finnes i lageret, kan du skrive inn OK-nummer og modell her. Den blir
+                            automatisk lagt til i PC-oversikten og koblet til utlånet.') }}
                         </div>
                     </div>
 
@@ -65,7 +88,7 @@
                         <div class="col-md-4">
                             <label for="value" class="form-label">{{ t('Verdisak') }}</label>
                             <input type="text" class="form-control" id="value" name="value"
-                                   placeholder="{{ t('f.eks. 5000 kr') }}">
+                                placeholder="{{ t('f.eks. 5000 kr') }}">
                         </div>
                         <div class="col-md-4">
                             <label for="reason" class="form-label">{{ t('Hvorfor') }}</label>
@@ -92,26 +115,26 @@
 
 <!-- JS for å koble søkefeltet til pc_id -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const displayInput = document.getElementById('pc_search_input');
-  const hiddenInput = document.getElementById('pc_id_hidden');
-  const datalist = document.getElementById('pc_list');
+    document.addEventListener('DOMContentLoaded', function () {
+        const displayInput = document.getElementById('pc_search_input');
+        const hiddenInput = document.getElementById('pc_id_hidden');
+        const datalist = document.getElementById('pc_list');
 
-  if (!displayInput || !hiddenInput || !datalist) return;
+        if (!displayInput || !hiddenInput || !datalist) return;
 
-  displayInput.addEventListener('input', function () {
-    const value = this.value;
-    let matchedId = '';
-    const options = datalist.querySelectorAll('option');
+        displayInput.addEventListener('input', function () {
+            const value = this.value;
+            let matchedId = '';
+            const options = datalist.querySelectorAll('option');
 
-    options.forEach(function (opt) {
-      if (opt.value === value) {
-        matchedId = opt.getAttribute('data-id') || '';
-      }
+            options.forEach(function (opt) {
+                if (opt.value === value) {
+                    matchedId = opt.getAttribute('data-id') || '';
+                }
+            });
+
+            hiddenInput.value = matchedId;
+        });
     });
-
-    hiddenInput.value = matchedId;
-  });
-});
 </script>
 {% endblock %}
