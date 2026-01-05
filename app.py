@@ -114,7 +114,7 @@ translations = {
         "Will be deleted in": "Slettes om",
         "days": "dager",
         "Returnerte utlån": "Returned loans",
-        "Røde rader markerer forfalte aktive utlån.": "Red rows indicate overdue active loans.",
+        "Røde rader markerer forfalte aktive utlån": "Red rows indicate overdue active loans",
 
 
         "Søk": "Search",
