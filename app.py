@@ -206,6 +206,8 @@ translations = {
         "Sorter: Modell Z → A": "Sort: Model Z → A",
         "Sorter: OK-nummer høy → lav": "Sort: OK number high → low",
         "Sorter: OK-nummer lav → høy": "Sort: OK number low → high",
+        "Sorter: OK-nummer A → Z": "Sort: OK number A → Z",
+        "Sorter: OK-nummer Z → A": "Sort: OK number Z → A",
         "Sorter: Utlånt først": "Sort: Loaned out first",
         "Sorter: Ledig først": "Sort: Available first",
         "Tøm søk": "Clear search",
