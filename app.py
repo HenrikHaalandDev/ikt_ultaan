@@ -113,6 +113,7 @@ translations = {
         "Returnerte": "Returned",
         "Will be deleted in": "Slettes om",
         "days": "dager",
+        "Returnerte utlån": "Returned loans",
 
 
         "Søk": "Search",
