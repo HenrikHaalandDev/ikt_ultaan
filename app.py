@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from functools import wraps
 from sqlalchemy import func
@@ -111,6 +111,9 @@ translations = {
         "Totalt returnert": "Total returned",
         "Historikk": "History",
         "Returnerte": "Returned",
+        "Will be deleted in": "Slettes om",
+        "days": "dager",
+
 
         "Søk": "Search",
         "Søk på navn, gruppe eller utstyr...": "Search by name, group or item...",
@@ -410,6 +413,22 @@ def local_today():
         return datetime.now().date()
     return datetime.now(OSLO_TZ).date()
 
+def cleanup_old_returned_loans():
+    """Delete returned loans older than 7 days"""
+    cutoff = datetime.utcnow() - timedelta(days=7)
+
+    old_loans = Loan.query.filter(
+        Loan.is_returned == True,
+        Loan.return_date != None,
+        Loan.return_date < cutoff
+    ).all()
+
+    if old_loans:
+        for loan in old_loans:
+            db.session.delete(loan)
+        db.session.commit()
+
+
 
 def login_required(f):
     @wraps(f)
@@ -515,18 +534,29 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    cleanup_old_returned_loans()
+
     active_loans = Loan.query.filter_by(is_returned=False).all()
     returned_loans = Loan.query.filter_by(is_returned=True).all()
 
     today_local = local_today()
+    now_utc = datetime.utcnow()
 
-    for loan in active_loans + returned_loans:
+    # --------------------
+    # ACTIVE LOANS
+    # --------------------
+    for loan in active_loans:
         loan.checkout_date_local = utc_to_local(loan.checkout_date)
-        loan.return_date_local = utc_to_local(loan.return_date)
+        loan.return_date_local = None
 
-        # ✅ Add a human-friendly PC label for templates/search
+        # ✅ OVERDUE FLAG
+        loan.overdue = (
+            loan.due_date is not None
+            and loan.due_date.date() < today_local
+        )
+
+        # PC label
         if loan.pc:
-            # Example: "OK12345 – Lenovo 14e"
             loan.pc_label = f"{loan.pc.ok_number} – {loan.pc.model_type}"
             loan.pc_ok = loan.pc.ok_number
             loan.pc_model = loan.pc.model_type
@@ -535,16 +565,40 @@ def dashboard():
             loan.pc_ok = ""
             loan.pc_model = ""
 
-        loan.overdue = (
-            not loan.is_returned
-            and loan.due_date is not None
-            and loan.due_date.date() < today_local
-        )
+    # --------------------
+    # RETURNED LOANS
+    # --------------------
+    for loan in returned_loans:
+        loan.checkout_date_local = utc_to_local(loan.checkout_date)
+        loan.return_date_local = utc_to_local(loan.return_date)
 
+        loan.overdue = False  # returned loans are never overdue
+
+        # ✅ DELETE COUNTDOWN
+        loan.delete_in_days = None
+        if loan.return_date:
+            delta = now_utc - loan.return_date
+            loan.delete_in_days = max(0, 7 - delta.days)
+
+        # PC label
+        if loan.pc:
+            loan.pc_label = f"{loan.pc.ok_number} – {loan.pc.model_type}"
+            loan.pc_ok = loan.pc.ok_number
+            loan.pc_model = loan.pc.model_type
+        else:
+            loan.pc_label = ""
+            loan.pc_ok = ""
+            loan.pc_model = ""
+
+    # --------------------
+    # STATS
+    # --------------------
     overdue_count = sum(1 for l in active_loans if l.overdue)
+
     returned_today_count = sum(
         1 for l in returned_loans
-        if l.return_date_local and l.return_date_local.date() == today_local
+        if l.return_date_local
+        and l.return_date_local.date() == today_local
     )
 
     total_active = len(active_loans)
@@ -559,6 +613,7 @@ def dashboard():
         returned_today_count=returned_today_count,
         total_returned=total_returned
     )
+
 
 
 @app.route('/loan/new', methods=['GET', 'POST'])

@@ -331,7 +331,27 @@
                                             <span class="text-muted">{{ t('Ikke registrert') }}</span>
                                             {% endif %}
                                         </td>
-                                        <td>{{ loan.checkout_date_local.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                        <td>
+                                            {% if loan.return_date_local %}
+                                            {{ loan.return_date_local.strftime('%Y-%m-%d %H:%M:%S') }}
+
+                                            {% if loan.delete_in_days is not none %}
+                                            <div class="small mt-1
+                                                {% if loan.delete_in_days <= 1 %}
+                                                    text-danger
+                                                {% elif loan.delete_in_days <= 3 %}
+                                                    text-warning
+                                                {% else %}
+                                                    text-muted
+                                                {% endif %}">
+                                                ⏳ Will be deleted in {{ loan.delete_in_days }} days
+                                            </div>
+                                            {% endif %}
+                                            {% else %}
+                                            <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+
                                         <td>
                                             {% if loan.due_date %}
                                             {{ loan.due_date.strftime('%Y-%m-%d') }}
