@@ -582,7 +582,7 @@ def dashboard():
         loan.delete_in_days = None
         if loan.return_date:
             delta = now_utc - loan.return_date
-            loan.delete_in_days = max(0, 7 - delta.days)
+            loan.delete_in_days = max(0, 12 - delta.days)
 
         # PC label
         if loan.pc:
