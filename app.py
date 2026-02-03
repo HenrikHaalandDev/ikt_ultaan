@@ -2,13 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 import os
 from functools import wraps
 from sqlalchemy import func
-import pandas as pd
-from flask import send_file
-from io import BytesIO
 
 # --- timezone (safe) ---
 try:
@@ -421,8 +418,8 @@ def local_today():
     return datetime.now(OSLO_TZ).date()
 
 def cleanup_old_returned_loans():
-    """Delete returned loans older than 7 days"""
-    cutoff = datetime.utcnow() - timedelta(days=7)
+    """Delete returned loans older than 5 years"""
+    cutoff = datetime.utcnow() - timedelta(days=5*365)
 
     old_loans = Loan.query.filter(
         Loan.is_returned == True,
@@ -1054,53 +1051,6 @@ def profile():
         return redirect(url_for('profile'))
 
     return render_template('user_profile.html', user=user)
-
-
-
-# -------------------- Excel --------------------
-
-@app.route('/export/loans')
-@login_required
-@admin_required
-def export_loans_excel():
-    loans = Loan.query.outerjoin(PC).outerjoin(User).all()
-
-    data = []
-    for loan in loans:
-        data.append({
-            "Loan ID": loan.id,
-            "Borrower Name": loan.borrower_name,
-            "Phone": loan.borrower_phone,
-            "Class": loan.class_info,
-            "Item": loan.item,
-            "PC OK Number": loan.pc.ok_number if loan.pc else "",
-            "PC Model": loan.pc.model_type if loan.pc else "",
-            "Checked Out": loan.checkout_date.strftime("%Y-%m-%d %H:%M:%S"),
-            "Due Date": loan.due_date.strftime("%Y-%m-%d") if loan.due_date else "",
-            "Returned": "Yes" if loan.is_returned else "No",
-            "Return Date": loan.return_date.strftime("%Y-%m-%d %H:%M:%S") if loan.return_date else "",
-            "Registered By": loan.user.username if loan.user else "",
-        })
-
-    df = pd.DataFrame(data)
-
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Loans")
-
-    output.seek(0)
-
-    from datetime import date
-
-    today_str = date.today().isoformat()  # YYYY-MM-DD
-
-    return send_file(
-        output,
-        as_attachment=True,
-        download_name=f"loans_{today_str}.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
 
 
 # -------------------- MAIN --------------------
