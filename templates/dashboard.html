@@ -22,12 +22,18 @@
                 <a href="{{ url_for('new_loan') }}" class="btn btn-primary btn-icon">
                     <i class="fas fa-plus"></i> {{ t('Nytt utlån') }}
                 </a>
+
                 {% if is_admin %}
+                <a href="{{ url_for('export_loans_excel') }}" class="btn btn-outline-success btn-icon">
+                    <i class="fa-solid fa-file-excel"></i> {{ t('Eksporter Excel') }}
+                </a>
+
                 <a href="{{ url_for('admin_panel') }}" class="btn btn-outline-secondary btn-icon">
                     <i class="fas fa-cog"></i> {{ t('Admin') }}
                 </a>
                 {% endif %}
             </div>
+
         </div>
 
         <!-- Stat cards -->
