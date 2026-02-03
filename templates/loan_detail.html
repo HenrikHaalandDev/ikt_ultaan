@@ -66,7 +66,8 @@
 
             <!-- Borrower -->
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded-3 h-100">
+              <div class="detail-box h-100">
+
                 <div class="text-muted small mb-1">{{ t('Navn på elev/ansatt') }}</div>
                 <div class="fw-semibold">{{ loan.borrower_name }}</div>
               </div>
@@ -74,7 +75,8 @@
 
             <!-- Class -->
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded-3 h-100">
+              <div class="detail-box h-100">
+
                 <div class="text-muted small mb-1">{{ t('Klasse') }}</div>
                 <div class="fw-semibold">
                   {% if loan.class_info %}
@@ -89,7 +91,8 @@
 
             <!-- Phone -->
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded-3 h-100">
+              <div class="detail-box h-100">
+
                 <div class="text-muted small mb-2">{{ t('Telefon') }}</div>
                 {% if loan.borrower_phone %}
                 <div class="d-flex align-items-center justify-content-between border rounded-3 bg-white px-3 py-2">
@@ -113,7 +116,8 @@
             <!-- PC -->
             {% if loan.pc %}
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded-3 h-100">
+              <div class="detail-box h-100">
+
                 <div class="text-muted small mb-1">{{ t('PC (fra oversikt)') }}</div>
                 <div class="fw-semibold">
                   {{ loan.pc.ok_number }} — {{ loan.pc.model_type }}
@@ -137,7 +141,8 @@
 
             <!-- Value -->
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded-3 h-100">
+              <div class="detail-box h-100">
+
                 <div class="text-muted small mb-1">{{ t('Verdisak') }}</div>
                 <div class="fw-semibold">{{ loan.value or t('Ikke angitt') }}</div>
               </div>
@@ -145,7 +150,8 @@
 
             <!-- Reason -->
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded-3 h-100">
+              <div class="detail-box h-100">
+
                 <div class="text-muted small mb-1">{{ t('Hvorfor') }}</div>
                 <div class="fw-semibold">{{ loan.reason or t('Ikke angitt') }}</div>
               </div>
