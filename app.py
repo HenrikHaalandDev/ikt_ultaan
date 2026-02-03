@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 import os
 from functools import wraps
 from sqlalchemy import func
+import io
+import pandas as pd
+
 
 # --- timezone (safe) ---
 try:
@@ -1051,6 +1054,44 @@ def profile():
         return redirect(url_for('profile'))
 
     return render_template('user_profile.html', user=user)
+
+
+@app.route('/loans/export/excel')
+@login_required
+@admin_required
+def export_loans_excel():
+    loans = Loan.query.order_by(Loan.checkout_date.desc()).all()
+
+    rows = []
+    for loan in loans:
+        rows.append({
+            "Navn": loan.borrower_name,
+            "Gruppe": loan.class_info,
+            "Telefon": loan.borrower_phone,
+            "Utstyr": loan.item,
+            "PC": f"{loan.pc.ok_number} – {loan.pc.model_type}" if loan.pc else "",
+            "Utlånt": loan.checkout_date.strftime("%Y-%m-%d %H:%M"),
+            "Frist": loan.due_date.strftime("%Y-%m-%d") if loan.due_date else "",
+            "Returnert": loan.return_date.strftime("%Y-%m-%d %H:%M") if loan.return_date else "",
+            "Status": "Returnert" if loan.is_returned else "Aktiv",
+        })
+
+    df = pd.DataFrame(rows)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Utlån")
+
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="utlan.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
 
 
 # -------------------- MAIN --------------------
