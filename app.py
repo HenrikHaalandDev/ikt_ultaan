@@ -312,8 +312,8 @@ item_translations_en = {
     "Tastatur": "Keyboard",
     "skjerm": "Monitor",
     "Skjerm": "Monitor",
-    "Låne PC": "Loaner laptop",
-    "låne PC": "Loaner laptop",
+    "Låne PC": "Loaned laptop",
+    "låne PC": "Loaned laptop",
 }
 
 
