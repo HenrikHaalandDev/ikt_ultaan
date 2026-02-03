@@ -118,7 +118,7 @@ translations = {
         "days": "dager",
         "Returnerte utlån": "Returned loans",
         "Røde rader markerer forfalte aktive utlån": "Red rows indicate overdue active loans",
-        "Exporter Excel": "Export Excel",
+        "Eksporter Excel": "Export Excel",
 
 
         "Søk": "Search",
