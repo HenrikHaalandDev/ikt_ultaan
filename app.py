@@ -584,8 +584,9 @@ def dashboard():
         # ✅ DELETE COUNTDOWN
         loan.delete_in_days = None
         if loan.return_date:
-            delta = now_utc - loan.return_date
-            loan.delete_in_days = max(0, 12 - delta.days)
+            days_since_return = (now_utc - loan.return_date).days
+            retention_days = 5 * 365  # 5 years
+            loan.delete_in_days = max(0, retention_days - days_since_return)
 
         # PC label
         if loan.pc:
