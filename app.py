@@ -192,6 +192,8 @@ translations = {
         "Avbryt": "Cancel",
         "Registrer utlån": "Register loan",
         "* Obligatoriske felt": "* Required fields",
+        "f.eks. 1STA eller Ansatt": "e.g. 1STA or Employee",
+        "f.eks. PC, iPad, lader...": "e.g. PC, iPad, charger...",
 
         "Søk etter OK-nummer eller modell...": "Search by OK number or model...",
         "Start å skrive for å søke i PC-lageret. Når du velger et treff, kobles riktig PC til utlånet.": "Start typing to search the PC inventory. When you choose a result, the correct PC is linked to the loan.",
