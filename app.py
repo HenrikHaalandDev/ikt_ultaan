@@ -187,7 +187,7 @@ translations = {
         "Hva er utlånt *": "What is loaned out *",
         "Velg PC (valgfritt)": "Select PC (optional)",
         "-- Ingen valgt --": "-- None selected --",
-        "f.eks. 5000 kr": "e.g. 5000 NOK",
+        "f.eks. Airpods, Telefon, Bankkort, Id-kort...": "e.g. Airpods, Phone, Bank card, ID card...",
         "Frist for innlevering": "Return deadline",
         "Avbryt": "Cancel",
         "Registrer utlån": "Register loan",
