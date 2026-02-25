@@ -18,9 +18,9 @@
                                 value="{{ form.get('borrower_name', '') }}" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">{{ t('Klasse') }}</label>
+                            <label class="form-label">{{ t('Klasse *') }}</label>
                             <input type="text" class="form-control" name="class_info"
-                                value="{{ form.get('class_info', '') }}">
+                                value="{{ form.get('class_info', '') }}" placeholder="{{ t('f.eks. 1STA eller Ansatt')}}" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">{{ t('Telefon') }}</label>
@@ -31,7 +31,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">{{ t('Hva er utlånt *') }}</label>
-                        <input type="text" class="form-control" name="item" value="{{ form.get('item', '') }}" required>
+                        <input type="text" class="form-control" name="item" value="{{ form.get('item', '') }}" required placeholder="{{ t('f.eks. PC, iPad, lader...') }}">
                     </div>
 
                     <!-- 1) Søk i eksisterende PC-lager -->
